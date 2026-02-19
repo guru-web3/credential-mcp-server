@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "NFT community with Open Sea - Pudgy Penguins, Cyberkongz, Anichess Ethernals, Chimpers, The Sandbox LANDs",
+  "title": "Nft Communities With OpenSea - 2",
+  "type": "object",
+  "$metadata": {
+    "uris": {
+      "jsonLdContext": "https://credential.api.staging.air3.com/dstorage/download/c21xo050lev4a0252170Nc"
+    },
+    "type": "nftcommunities2",
+    "version": "1.0"
+  },
+  "properties": {
+    "subjectPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "credentialSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ]
+    },
+    "credentialSubject": {
+      "title": "Credential subject",
+      "type": "object",
+      "properties": {
+        "cyberkongzNftHolding": {
+          "description": "CyberKongz NFT Holding",
+          "type": "integer",
+          "title": "CyberKongz NFT Holding"
+        },
+        "chimpersNftHolding": {
+          "description": "Chimpers NFT Holding",
+          "type": "integer",
+          "title": "Chimpers NFT Holding"
+        },
+        "pudgyPenguinNftHolding": {
+          "description": "Pudgy Penguin NFT Holding",
+          "type": "integer",
+          "title": "Pudgy Penguin NFT Holding"
+        },
+        "id": {
+          "format": "uri",
+          "title": "Credential subject ID",
+          "type": "string"
+        },
+        "anichessEthernalsNftHolding": {
+          "description": "Anichess Ethernals NFT Holding",
+          "type": "integer",
+          "title": "Anichess Ethernals NFT Holding"
+        },
+        "sandboxLandsNftHolding": {
+          "description": "Sandbox LANDs NFT Holding",
+          "type": "integer",
+          "title": "Sandbox LANDs NFT Holding"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "type": {
+      "type": [
+        "string",
+        "array"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "@context": {
+      "type": [
+        "string",
+        "array",
+        "object"
+      ]
+    },
+    "version": {
+      "type": "integer"
+    },
+    "issuer": {
+      "format": "uri",
+      "type": [
+        "string",
+        "object"
+      ],
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "issuanceDate": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updatable": {
+      "type": "boolean"
+    },
+    "revNonce": {
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    },
+    "merklizationRootPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "expirationDate": {
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "@context",
+    "id",
+    "type",
+    "issuanceDate",
+    "credentialSubject",
+    "credentialSchema",
+    "credentialStatus",
+    "issuer"
+  ]
+}

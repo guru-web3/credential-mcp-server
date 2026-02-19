@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Nansen Token Credentials Batch 2",
+  "title": "nansen-token-credential",
+  "type": "object",
+  "$metadata": {
+    "uris": {
+      "jsonLdContext": "https://credential.api.staging.air3.com/dstorage/download/c28t6050wugbj01t5158QC"
+    },
+    "type": "nansenTokenCredentialsBatch2",
+    "version": "1.0"
+  },
+  "properties": {
+    "subjectPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "credentialSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ]
+    },
+    "credentialSubject": {
+      "type": "object",
+      "title": "Credential subject",
+      "properties": {
+        "champBalance": {
+          "description": "CHAMP token balance continuously held for over 30 days",
+          "type": "integer",
+          "title": "CHAMP Token Holding"
+        },
+        "id": {
+          "format": "uri",
+          "description": "Define the DID of the subject that owns the credential",
+          "type": "string",
+          "title": "Credential subject ID"
+        },
+        "adaBalance": {
+          "description": "ADA token balance continuously held for over 30 days",
+          "type": "integer",
+          "title": "ADA Token Holding"
+        },
+        "dogeBalance": {
+          "description": "DOGE token balance continuously held for over 30 days",
+          "type": "integer",
+          "title": "DOGE Token Holding"
+        },
+        "xrpBalance": {
+          "description": "XRP token balance continuously held for over 30 days",
+          "type": "integer",
+          "title": "XRP Token Holding"
+        },
+        "islandBalance": {
+          "description": "ISLAND token balance continuously held for over 30 days",
+          "type": "integer",
+          "title": "ISLAND Token Holding"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "type": {
+      "type": [
+        "string",
+        "array"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "@context": {
+      "type": [
+        "string",
+        "array",
+        "object"
+      ]
+    },
+    "version": {
+      "type": "integer"
+    },
+    "issuer": {
+      "format": "uri",
+      "type": [
+        "string",
+        "object"
+      ],
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "issuanceDate": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updatable": {
+      "type": "boolean"
+    },
+    "revNonce": {
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    },
+    "merklizationRootPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "expirationDate": {
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "@context",
+    "id",
+    "type",
+    "issuanceDate",
+    "credentialSubject",
+    "credentialSchema",
+    "credentialStatus",
+    "issuer"
+  ]
+}

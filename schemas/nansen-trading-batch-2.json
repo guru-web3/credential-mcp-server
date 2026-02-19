@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Nansen Trading Credentials Batch 2",
+  "title": "nansen-trading-credential-batch-2",
+  "type": "object",
+  "$metadata": {
+    "uris": {
+      "jsonLdContext": "https://credential.api.staging.air3.com/dstorage/download/c28sw050n3sk000q0289uo"
+    },
+    "type": "nansenTradingCredentialBatch2",
+    "version": "1.0"
+  },
+  "properties": {
+    "subjectPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "credentialSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ]
+    },
+    "credentialSubject": {
+      "type": "object",
+      "title": "Credential subject",
+      "properties": {
+        "aerodromeVolumeUsd": {
+          "description": "Traded volumen on Aerodrome in the last 1 year timeframe",
+          "type": "integer",
+          "title": "Aerodrome Trading Volume 1 Year Timeframe"
+        },
+        "hyperliquidVolumeUsd": {
+          "description": "Traded volumen on Aerodrome in the last 1 year timeframe",
+          "type": "integer",
+          "title": "HyperLiquid Trading Volume 1 Year Timeframe"
+        },
+        "openseaVolumeUsd": {
+          "description": "Traded volumen on Aerodrome in the last 1 year timeframe",
+          "type": "integer",
+          "title": "OpenSea Trading Volume 1 Year Timeframe"
+        },
+        "id": {
+          "format": "uri",
+          "description": "Define the DID of the subject that owns the credential",
+          "type": "string",
+          "title": "Credential subject ID"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "type": {
+      "type": [
+        "string",
+        "array"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "@context": {
+      "type": [
+        "string",
+        "array",
+        "object"
+      ]
+    },
+    "version": {
+      "type": "integer"
+    },
+    "issuer": {
+      "format": "uri",
+      "type": [
+        "string",
+        "object"
+      ],
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "issuanceDate": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updatable": {
+      "type": "boolean"
+    },
+    "revNonce": {
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    },
+    "merklizationRootPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "expirationDate": {
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "@context",
+    "id",
+    "type",
+    "issuanceDate",
+    "credentialSubject",
+    "credentialSchema",
+    "credentialStatus",
+    "issuer"
+  ]
+}

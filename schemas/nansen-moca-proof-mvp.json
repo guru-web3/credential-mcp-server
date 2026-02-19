@@ -1,0 +1,438 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Nansen Moca Proof MVP schema",
+  "title": "nanson-moca-proof-v3",
+  "type": "object",
+  "$metadata": {
+    "uris": {
+      "jsonLdContext": "https://credential.api.staging.air3.com/dstorage/download/c21up0509pp4y00d6130ik"
+    },
+    "type": "nansenmvp",
+    "version": "1.0.4"
+  },
+  "properties": {
+    "subjectPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "credentialSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ]
+    },
+    "credentialSubject": {
+      "title": "Credential subject",
+      "type": "object",
+      "properties": {
+        "isSmartFund": {
+          "description": "isSmartFund",
+          "type": "boolean",
+          "title": "isSmartFund"
+        },
+        "isBlastSpecialist": {
+          "description": "isBlastSpecialist",
+          "type": "boolean",
+          "title": "isBlastSpecialist"
+        },
+        "exitLiquidity": {
+          "description": "exitLiquidity",
+          "type": "boolean",
+          "title": "exitLiquidity"
+        },
+        "isSmartMoney30D": {
+          "description": "isSmartMoney30D",
+          "type": "boolean",
+          "title": "isSmartMoney30D"
+        },
+        "isZeroGasPriceSender": {
+          "description": "isZeroGasPriceSender",
+          "type": "boolean",
+          "title": "isZeroGasPriceSender"
+        },
+        "isScrollSpecialist": {
+          "description": "isScrollSpecialist",
+          "type": "boolean",
+          "title": "isScrollSpecialist"
+        },
+        "isSeiSpecialist": {
+          "description": "isSeiSpecialist",
+          "type": "boolean",
+          "title": "isSeiSpecialist"
+        },
+        "isTopPumpFunCreator": {
+          "description": "isTopPumpFunCreator",
+          "type": "boolean",
+          "title": "isTopPumpFunCreator"
+        },
+        "isSmartMoney90D": {
+          "description": "isSmartMoney90D",
+          "type": "boolean",
+          "title": "isSmartMoney90D"
+        },
+        "isCeFiOrExchangeWallet": {
+          "description": "isCeFiOrExchangeWallet",
+          "type": "boolean",
+          "title": "isCeFiOrExchangeWallet"
+        },
+        "isGamingSpecialist": {
+          "description": "isGamingSpecialist",
+          "type": "boolean",
+          "title": "isGamingSpecialist"
+        },
+        "isTop100LeaderboardTrader": {
+          "description": "isTop100LeaderboardTrader",
+          "type": "boolean",
+          "title": "isTop100LeaderboardTrader"
+        },
+        "isSocialPlatformUser": {
+          "description": "isSocialPlatformUser",
+          "type": "boolean",
+          "title": "isSocialPlatformUser"
+        },
+        "balanceMOCA30d": {
+          "description": "Moca Token Holding",
+          "type": "integer",
+          "title": "Moca Token Holding"
+        },
+        "portfolio": {
+          "description": "Portfolio balance in USD",
+          "type": "integer",
+          "title": "Porfolio (USD)"
+        },
+        "isMemecoinSpecialist": {
+          "description": "isMemecoinSpecialist",
+          "type": "boolean",
+          "title": "isMemecoinSpecialist"
+        },
+        "isAvalancheSpecialist": {
+          "description": "isAvalancheSpecialist",
+          "type": "boolean",
+          "title": "isAvalancheSpecialist"
+        },
+        "isBridgedToEthereum": {
+          "description": "isBridgedToEthereum",
+          "type": "boolean",
+          "title": "isBridgedToEthereum"
+        },
+        "rank": {
+          "description": "Rank",
+          "type": "integer",
+          "title": "Rank"
+        },
+        "formerSmartTrader": {
+          "description": "formerSmartTrader",
+          "type": "boolean",
+          "title": "formerSmartTrader"
+        },
+        "id": {
+          "format": "uri",
+          "title": "Credential subject ID",
+          "type": "string"
+        },
+        "daysSinceFirstTx": {
+          "description": "daysSinceFirstTx",
+          "type": "integer",
+          "title": "Days since first transaction"
+        },
+        "portfolioEvm": {
+          "description": "portfolioEvm",
+          "type": "integer",
+          "title": "Portfolio - EVM (USD)"
+        },
+        "isPhishingOrExploitAddress": {
+          "description": "isPhishingOrExploitAddress",
+          "type": "boolean",
+          "title": "isPhishingOrExploitAddress"
+        },
+        "isZKsyncSpecialist": {
+          "description": "isZKsyncSpecialist",
+          "type": "boolean",
+          "title": "isZKsyncSpecialist"
+        },
+        "isFantomSpecialist": {
+          "description": "isFantomSpecialist",
+          "type": "boolean",
+          "title": "isFantomSpecialist"
+        },
+        "isRetiredFirstMoverSmartMoney": {
+          "description": "isRetiredFirstMoverSmartMoney",
+          "type": "boolean",
+          "title": "isRetiredFirstMoverSmartMoney"
+        },
+        "pnl": {
+          "description": "PNL",
+          "type": "integer",
+          "title": "PNL"
+        },
+        "isOptimismSpecialist": {
+          "description": "isOptimismSpecialist",
+          "type": "boolean",
+          "title": "isOptimismSpecialist"
+        },
+        "emergingSmartTrader": {
+          "description": "emergingSmartTrader",
+          "type": "boolean",
+          "title": "emergingSmartTrader"
+        },
+        "isBaseSpecialist": {
+          "description": "isBaseSpecialist",
+          "type": "boolean",
+          "title": "isBaseSpecialist"
+        },
+        "isLiquidityPoolProvider": {
+          "description": "isLiquidityPoolProvider",
+          "type": "boolean",
+          "title": "isLiquidityPoolProvider"
+        },
+        "isRegisteredSNSDomain": {
+          "description": "isRegisteredSNSDomain",
+          "type": "boolean",
+          "title": "isRegisteredSNSDomain"
+        },
+        "portfolioSol": {
+          "description": "portfolioSol",
+          "type": "integer",
+          "title": "Portfolio - SOL (USD)"
+        },
+        "isMultipleMemecoinWhales": {
+          "description": "isMultipleMemecoinWhales",
+          "type": "boolean",
+          "title": "isMultipleMemecoinWhales"
+        },
+        "isETHMillionaire": {
+          "description": "isETHMillionaire",
+          "type": "boolean",
+          "title": "isETHMillionaire"
+        },
+        "isMultipleAirdropRecipientSolana": {
+          "description": "isMultipleAirdropRecipientSolana",
+          "type": "boolean",
+          "title": "isMultipleAirdropRecipientSolana"
+        },
+        "isEarlyGrailParticipant": {
+          "description": "isEarlyGrailParticipant",
+          "type": "boolean",
+          "title": "isEarlyGrailParticipant"
+        },
+        "isArbitrumSpecialist": {
+          "description": "isArbitrumSpecialist",
+          "type": "boolean",
+          "title": "isArbitrumSpecialist"
+        },
+        "isBSCSpecialist": {
+          "description": "isBSCSpecialist",
+          "type": "boolean",
+          "title": "isBSCSpecialist"
+        },
+        "isJupiterDCAOrderSolana": {
+          "description": "isJupiterDCAOrderSolana",
+          "type": "boolean",
+          "title": "isJupiterDCAOrderSolana"
+        },
+        "tier": {
+          "description": "Nansen Points Tier",
+          "type": "string",
+          "title": "Nansen Points Tier"
+        },
+        "isAISpecialist": {
+          "description": "isAISpecialist",
+          "type": "boolean",
+          "title": "isAISpecialist"
+        },
+        "isNewTokenSpecialist": {
+          "description": "isNewTokenSpecialist",
+          "type": "boolean",
+          "title": "isNewTokenSpecialist"
+        },
+        "isRetiredProfitableSmartMoney": {
+          "description": "isRetiredProfitableSmartMoney",
+          "type": "boolean",
+          "title": "isRetiredProfitableSmartMoney"
+        },
+        "isLineaSpecialist": {
+          "description": "isLineaSpecialist",
+          "type": "boolean",
+          "title": "isLineaSpecialist"
+        },
+        "isRWASpecialist": {
+          "description": "isRWASpecialist",
+          "type": "boolean",
+          "title": "isRWASpecialist"
+        },
+        "isDEXSpecialist": {
+          "description": "isDEXSpecialist",
+          "type": "boolean",
+          "title": "isDEXSpecialist"
+        },
+        "isRetiredAirdropSmartMoney": {
+          "description": "isRetiredAirdropSmartMoney",
+          "type": "boolean",
+          "title": "isRetiredAirdropSmartMoney"
+        },
+        "pointBalance": {
+          "description": "Points Balance",
+          "type": "integer",
+          "title": "Points Balance"
+        },
+        "isTradingBotUserSolana": {
+          "description": "isTradingBotUserSolana",
+          "type": "boolean",
+          "title": "isTradingBotUserSolana"
+        },
+        "isOpenseaUser": {
+          "description": "OpenSea User",
+          "type": "boolean",
+          "title": "OpenSea User"
+        },
+        "isTokenMillionaire": {
+          "description": "isTokenMillionaire",
+          "type": "boolean",
+          "title": "isTokenMillionaire"
+        },
+        "isSmartMoney2Y": {
+          "description": "isSmartMoney2Y",
+          "type": "boolean",
+          "title": "isSmartMoney2Y"
+        },
+        "isTokenDeployer": {
+          "description": "isTokenDeployer",
+          "type": "boolean",
+          "title": "isTokenDeployer"
+        },
+        "firstTxDate": {
+          "description": "firstTxDate",
+          "type": "integer",
+          "title": "firstTxDate"
+        },
+        "tokenCount": {
+          "description": "token count",
+          "type": "integer",
+          "title": "Token Count"
+        },
+        "isEarlyMemecoinTraderSolana": {
+          "description": "isEarlyMemecoinTraderSolana",
+          "type": "boolean",
+          "title": "isEarlyMemecoinTraderSolana"
+        },
+        "isNFTTrader": {
+          "description": "isNFTTrader",
+          "type": "boolean",
+          "title": "isNFTTrader"
+        },
+        "isMemecoinWhale": {
+          "description": "isMemecoinWhale",
+          "type": "boolean",
+          "title": "isMemecoinWhale"
+        }
+        "isSmartMoney180D": {
+          "description": "isSmartMoney180D",
+          "type": "boolean",
+          "title": "isSmartMoney180D"
+        },
+        "isPolygonSpecialist": {
+          "description": "isPolygonSpecialist",
+          "type": "boolean",
+          "title": "isPolygonSpecialist"
+        },
+        "balanceMOCA": {
+          "description": "MOCA Balance",
+          "type": "integer",
+          "title": "MOCA Balance"
+        },
+        "isRetiredPrivateSaleSmartMoney": {
+          "description": "isRetiredPrivateSaleSmartMoney",
+          "type": "boolean",
+          "title": "isRetiredPrivateSaleSmartMoney"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "type": {
+      "type": [
+        "string",
+        "array"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "@context": {
+      "type": [
+        "string",
+        "array",
+        "object"
+      ]
+    },
+    "version": {
+      "type": "integer"
+    },
+    "issuer": {
+      "format": "uri",
+      "type": [
+        "string",
+        "object"
+      ],
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "issuanceDate": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updatable": {
+      "type": "boolean"
+    },
+    "revNonce": {
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    },
+    "merklizationRootPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "expirationDate": {
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "@context",
+    "id",
+    "type",
+    "issuanceDate",
+    "credentialSubject",
+    "credentialSchema",
+    "credentialStatus",
+    "issuer"
+  ]
+}

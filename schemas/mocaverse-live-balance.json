@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Mocaverse - Moca Token Live Balance",
+  "title": "Mocaverse Live Balance",
+  "type": "object",
+  "$metadata": {
+    "uris": {
+      "jsonLdContext": "https://credential.api.staging.air3.com/dstorage/download/placeholder"
+    },
+    "type": "mocaverseLiveBalance",
+    "version": "1.0"
+  },
+  "properties": {
+    "subjectPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "credentialSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ]
+    },
+    "credentialSubject": {
+      "title": "Credential subject",
+      "type": "object",
+      "properties": {
+        "mocaTokenLiveBalance": {
+          "description": "Current live balance of $MOCA tokens in the wallet.",
+          "type": "integer",
+          "title": "Moca Token Live Balance"
+        },
+        "id": {
+          "format": "uri",
+          "title": "Credential subject ID",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "type": {
+      "type": [
+        "string",
+        "array"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "@context": {
+      "type": [
+        "string",
+        "array",
+        "object"
+      ]
+    },
+    "version": {
+      "type": "integer"
+    },
+    "issuer": {
+      "format": "uri",
+      "type": [
+        "string",
+        "object"
+      ],
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "issuanceDate": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updatable": {
+      "type": "boolean"
+    },
+    "revNonce": {
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    },
+    "merklizationRootPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "expirationDate": {
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "@context",
+    "id",
+    "type",
+    "issuanceDate",
+    "credentialSubject",
+    "credentialSchema",
+    "credentialStatus",
+    "issuer"
+  ]
+}

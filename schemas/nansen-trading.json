@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Nansen Trading Credentials",
+  "title": "nansen-trading-credential",
+  "type": "object",
+  "$metadata": {
+    "uris": {
+      "jsonLdContext": "https://credential.api.staging.air3.com/dstorage/download/c21xv050kfmpj0068114eF"
+    },
+    "type": "nansenTradingCredential",
+    "version": "1.0"
+  },
+  "properties": {
+    "credentialSubject": {
+      "type": "object",
+      "title": "Credential subject",
+      "properties": {
+        "uniswapVolumeUsd": {
+          "description": "The portion of the total volume that is specifically traded against Uniswap.",
+          "type": "integer",
+          "title": "Uniswap trading volume (USD)"
+        },
+        "mocaVolumeUsd": {
+          "description": "The portion of the total volume that involves the MOCA token, with contract address",
+          "type": "integer",
+          "title": "MOCA trading volume (USD)"
+        },
+        "id": {
+          "format": "uri",
+          "description": "Define the DID of the subject that owns the credential",
+          "type": "string",
+          "title": "Credential subject ID"
+        },
+        "totalDexVolumeUsd": {
+          "description": "The sum of all trading volume with any counterparty.",
+          "type": "integer",
+          "title": "Total on‑chain trading volume (USD)"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Nft Communities",
+  "title": "Nft Communities",
+  "type": "object",
+  "$metadata": {
+    "uris": {
+      "jsonLdContext": "https://credential.api.staging.air3.com/dstorage/download/c21un051dj46p0089320bm"
+    },
+    "type": "nftCommunity",
+    "version": "1.0.2"
+  },
+  "properties": {
+    "subjectPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "credentialSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ]
+    },
+    "credentialSubject": {
+      "title": "Credential subject",
+      "type": "object",
+      "properties": {
+        "pudgyPenguinNftHolding": {
+          "description": "Pudgy Penguin NFT Holding",
+          "type": "integer",
+          "title": "Pudgy Penguin NFT Holding"
+        },
+        "mocaNftHolding": {
+          "description": "Moca NFT Holdings",
+          "type": "integer",
+          "title": "Moca NFT Holdings"
+        },
+        "id": {
+          "format": "uri",
+          "title": "Credential subject ID",
+          "type": "string"
+        },
+        "anichessEthernalsNftHolding": {
+          "description": "Anichess Ethernals NFT Holding",
+          "type": "integer",
+          "title": "Anichess Ethernals NFT Holding"
+        },
+        "coolCatsNftHolding": {
+          "description": "Cool Cats NFT Holding",
+          "type": "integer",
+          "title": "Cool Cats NFT Holding"
+        },
+        "cryptoPunksNftHolding": {
+          "description": "CryptoPunks NFT Holding",
+          "type": "integer",
+          "title": "CryptoPunks NFT Holding"
+        },
+        "azukiNftHolding": {
+          "description": "Azuki NFT Holding",
+          "type": "integer",
+          "title": "Azuki NFT Holding"
+        },
+        "baycNftHolding": {
+          "description": "BAYC NFT Holding",
+          "type": "integer",
+          "title": "BAYC NFT Holding"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "type": {
+      "type": [
+        "string",
+        "array"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "@context": {
+      "type": [
+        "string",
+        "array",
+        "object"
+      ]
+    },
+    "version": {
+      "type": "integer"
+    },
+    "issuer": {
+      "format": "uri",
+      "type": [
+        "string",
+        "object"
+      ],
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "issuanceDate": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updatable": {
+      "type": "boolean"
+    },
+    "revNonce": {
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    },
+    "merklizationRootPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "expirationDate": {
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "@context",
+    "id",
+    "type",
+    "issuanceDate",
+    "credentialSubject",
+    "credentialSchema",
+    "credentialStatus",
+    "issuer"
+  ]
+}

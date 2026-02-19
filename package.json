@@ -1,0 +1,48 @@
+{
+  "name": "@animoca/credential-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Animoca credential management - automates schema creation, pricing, programs, and deployment",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "credential-mcp": "./bin/credential-mcp.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod +x bin/credential-mcp.js",
+    "watch": "tsc --watch",
+    "prepare": "npm run build",
+    "inspector": "npx @modelcontextprotocol/inspector dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "credentials",
+    "verifiable-credentials",
+    "animoca",
+    "automation",
+    "ai-assistant"
+  ],
+  "author": "Animoca",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.7.9",
+    "axios-retry": "^4.5.0",
+    "crypto-js": "^4.2.0",
+    "ethers": "^6.16.0",
+    "jose": "^5.9.6",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

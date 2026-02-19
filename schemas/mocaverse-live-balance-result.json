@@ -1,0 +1,13 @@
+{
+  "code": 80000000,
+  "data": {
+    "issuerId": "c21sm0702lgw900b19940X",
+    "jsonldDstorageId": "c28vm0500okdz0fn76933g",
+    "schemeDstorageId": "c28vm0500okg40fo2207jW",
+    "schemeId": "c28vm0600okdz01c1994j1",
+    "schemeStatus": "ENABLED",
+    "schemeVersion": "1.0"
+  },
+  "msg": "success",
+  "timestamp": 1770701146332
+}

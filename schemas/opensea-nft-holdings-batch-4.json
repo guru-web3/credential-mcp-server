@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Schema for tracking Moonbirds crossover NFT collections - Pieverse, Aster, Kaito, and Anichess collaborations",
+  "title": "Moonbirds Crossover NFT Holdings",
+  "type": "object",
+  "$metadata": {
+    "uris": {
+      "jsonLdContext": "https://credential.api.staging.air3.com/dstorage/download/c21xv050kod0z00e3859mu"
+    },
+    "type": "moonbirdscrossoverholdingbatch4",
+    "version": "1.0"
+  },
+  "properties": {
+    "subjectPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "credentialSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ]
+    },
+    "credentialSubject": {
+      "type": "object",
+      "title": "Credential subject",
+      "properties": {
+        "pieverseMoonbirdsNftHolding": {
+          "description": "Pieverse x Moonbirds NFT Holding (0x471190288724597a2d604f533b320c16ba9985e3)",
+          "title": "Pieverse x Moonbirds NFT Holding",
+          "type": "integer"
+        },
+        "asterMoonbirdsNftHolding": {
+          "description": "Aster X Moonbirds NFT Holding (0x6a8ee9220128d0e3da3ba0646e72cfcfb423d0b1)",
+          "title": "Aster X Moonbirds NFT Holding",
+          "type": "integer"
+        },
+        "kaitoMoonbirdsNftHolding": {
+          "description": "Kaito x Moonbirds NFT Holding (0xdc10583e877de4cee4cad222fbe83aec778c9a35)",
+          "title": "Kaito x MB NFT Holding",
+          "type": "integer"
+        },
+        "anichessMoonbirdsNftHolding": {
+          "description": "Anichess X Moonbirds NFT Holding (0x668403aaea6693a82ae3d7de22fb070f51b3ce9a)",
+          "title": "Anichess X Moonbirds NFT Holding",
+          "type": "integer"
+        },
+        "id": {
+          "format": "uri",
+          "description": "Define the DID of the subject that owns the credential",
+          "type": "string",
+          "title": "Credential subject ID"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "type": {
+      "type": [
+        "string",
+        "array"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "@context": {
+      "type": [
+        "string",
+        "array",
+        "object"
+      ]
+    },
+    "version": {
+      "type": "integer"
+    },
+    "issuer": {
+      "format": "uri",
+      "type": [
+        "string",
+        "object"
+      ],
+      "properties": {
+        "id": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "issuanceDate": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updatable": {
+      "type": "boolean"
+    },
+    "revNonce": {
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    },
+    "merklizationRootPosition": {
+      "type": "string",
+      "enum": [
+        "none",
+        "index",
+        "value"
+      ]
+    },
+    "expirationDate": {
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "@context",
+    "id",
+    "type",
+    "issuanceDate",
+    "credentialSubject",
+    "credentialSchema",
+    "credentialStatus",
+    "issuer"
+  ]
+}
