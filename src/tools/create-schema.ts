@@ -3,6 +3,16 @@ import { session } from '../session.js';
 import { apiRequest } from '../utils/api.js';
 import { SchemaDataPoint } from '../types.js';
 
+/** Generate a 21-char id for attribute (matches dashboard scripts) */
+function generateAttributeId(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  let result = '';
+  for (let i = 0; i < 21; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 export const CreateSchemaArgsSchema = z.object({
   schemaName: z.string().describe('Schema name (e.g., trading-volume-credential)'),
   schemaType: z.string().describe('Schema type identifier (e.g., tradingVolumeCredential). Must be unique.'),
@@ -18,13 +28,19 @@ export const CreateSchemaArgsSchema = z.object({
 export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>) {
   session.requireAuth();
 
+  const issuerId = session.get('issuerId');
+  if (!issuerId) {
+    throw new Error('No issuer ID in session. Use credential_authenticate first.');
+  }
+
   const { schemaName, schemaType, dataPoints, description, version } = args;
 
-  // Build credential subject schema (JSON Schema format)
+  // Build credential subject schema (JSON Schema format) – matches dashboard scripts
   const properties: Record<string, any> = {};
   dataPoints.forEach((dp: SchemaDataPoint) => {
     properties[dp.name] = {
       type: dp.type,
+      title: dp.description || dp.name,
       ...(dp.description && { description: dp.description }),
     };
   });
@@ -44,12 +60,30 @@ export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>)
     required: ['id']
   };
 
+  // attribute.data is required by the API (see credential-dashboard/scripts/create-schema.js)
+  const attributeData = dataPoints.map((dp: SchemaDataPoint) => ({
+    name: dp.name,
+    title: dp.description || dp.name,
+    id: generateAttributeId(),
+    depth: 1,
+    description: dp.description || '',
+    isRequired: false,
+    type: dp.type,
+    data_value_format: null,
+    data_value_enum: null,
+    data_value_max: null,
+    data_value_min: null,
+    data_value_pattern: null,
+    data_value_default: null,
+  }));
+
   const schemaData = {
     credentialSubject,
     title: schemaName,
     description: description || `Credential schema for ${schemaName}`,
     schemeType: schemaType,
     version,
+    attribute: { data: attributeData },
   };
 
   console.log('[DEBUG] Schema payload:', JSON.stringify(schemaData, null, 2));
@@ -60,7 +94,7 @@ export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>)
       schemeDstorageId: string;
       schemeVersion: string;
       schemeStatus: string;
-    }>('POST', '/management/scheme/publishOnOss', schemaData);
+    }>('POST', '/management/scheme/publishOnOss', schemaData, { 'x-issuer-id': issuerId });
 
     const schemaId = response.data.schemeId;
     
@@ -79,8 +113,8 @@ export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>)
       status: response.data.schemeStatus,
       dataPoints,
       nextSteps: [
-        'Configure pricing with setup_pricing tool',
-        'Create verification programs with create_verification_programs tool',
+        'Configure pricing with credential_setup_pricing',
+        'Create issuance program with credential_create_program, then verification programs with credential_create_verification_programs',
       ],
     };
   } catch (error: any) {

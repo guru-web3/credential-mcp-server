@@ -37,7 +37,7 @@ export async function verifySchemaPublished(args: z.infer<typeof VerifySchemaPub
   try {
     console.error(`\n🔍 Verifying schema ${schemaId}...`);
 
-    // Query schema details
+    // Get schema by ID (queryById returns a single scheme; /management/scheme/query is list with size/page/filterType)
     const response = await apiRequest<{
       schemeId: string;
       schemeTitle: string;
@@ -45,13 +45,9 @@ export async function verifySchemaPublished(args: z.infer<typeof VerifySchemaPub
       schemeDstorageId?: string;
     }>(
       'POST',
-      '/management/scheme/query',
-      {
-        schemeId: schemaId,
-      },
-      {
-        'x-issuer-id': issuerId,
-      }
+      '/management/scheme/queryById',
+      { schemeId: schemaId },
+      { 'x-issuer-id': issuerId }
     );
 
     const schemaData = response.data;
@@ -59,12 +55,10 @@ export async function verifySchemaPublished(args: z.infer<typeof VerifySchemaPub
     
     if (!schemaData.schemeDstorageId) {
       console.error(`   ✗ Not published to OSS yet`);
-      console.error(`   Run credential_publish_schema to publish it`);
-      
       return {
         published: false,
         accessible: false,
-        message: 'Schema not published to OSS yet. Run credential_publish_schema first.',
+        message: 'Schema is not published to OSS yet. Schemas are published when created; if this schema was created before that change, re-create it or contact support.',
         schemaId: schemaId,
       };
     }

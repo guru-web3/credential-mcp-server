@@ -12,8 +12,11 @@ import { createSchema, CreateSchemaArgsSchema } from './tools/create-schema.js';
 import { createCredentialTemplate, CreateCredentialTemplateArgsSchema } from './tools/create-credential-template.js';
 import { setupPricing, SetupPricingArgsSchema } from './tools/setup-pricing.js';
 import { createVerificationPrograms, CreateProgramsArgsSchema } from './tools/create-programs.js';
-import { publishSchema, PublishSchemaArgsSchema } from './tools/publish-schema.js';
 import { verifySchemaPublished, VerifySchemaPublishedArgsSchema } from './tools/verify-schema-published.js';
+import { listCredentialTemplates, ListCredentialTemplatesArgsSchema } from './tools/list-credential-templates.js';
+import { listVerificationPrograms, ListVerificationProgramsArgsSchema } from './tools/list-verification-programs.js';
+import { credentialDocs, CredentialDocsArgsSchema } from './tools/credential-docs.js';
+import { listSchemas, ListSchemasArgsSchema } from './tools/list-schemas.js';
 
 const server = new Server(
   {
@@ -99,19 +102,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: 'credential_publish_schema',
-      description: 'Publish a schema to OSS storage. This is REQUIRED before creating verification programs, as the backend validates zkQuery by downloading the schema from OSS.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          schemaId: {
-            type: 'string',
-            description: 'The schema ID to publish (optional, uses current session schemaId if not provided)',
-          },
-        },
-      },
-    },
-    {
       name: 'credential_verify_schema_published',
       description: 'Verify that a schema is published to OSS and accessible. Use this before creating programs to ensure the schema is ready.',
       inputSchema: {
@@ -125,22 +115,26 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: 'credential_create_template',
-      description: 'Create a credential template for the issuer. This is required before creating verification programs.',
+      name: 'credential_create_program',
+      description: 'Create an issuance program (credential template). Pass schemaId to fill schemeType, schemeTitle and credentialName from the schema; otherwise provide them or use session schemaId.',
       inputSchema: {
         type: 'object',
         properties: {
+          schemaId: {
+            type: 'string',
+            description: 'Schema ID. When provided, schemeType, schemeTitle and credentialName are fetched from the schema if omitted.',
+          },
           credentialName: {
             type: 'string',
-            description: 'Name of the credential',
+            description: 'Name of the credential. Defaults to schema title when schemaId is provided.',
           },
           schemeType: {
             type: 'string',
-            description: 'Schema type identifier (e.g., "nftHolderCredential")',
+            description: 'Schema type identifier. Filled from schema when schemaId is provided.',
           },
           schemeTitle: {
             type: 'string',
-            description: 'Schema title',
+            description: 'Schema title. Filled from schema when schemaId is provided.',
           },
           expirationDuration: {
             type: 'number',
@@ -167,12 +161,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             description: 'Compliance access key enabled (0 or 1)',
           },
         },
-        required: ['credentialName', 'schemeType', 'schemeTitle'],
+        required: [],
       },
     },
     {
       name: 'credential_setup_pricing',
-      description: 'Configure pricing model for a credential schema. Supports per-issuance or subscription models.',
+      description: 'Configure pricing model for a credential schema on MOCA payment API. Use pay_on_success (charge for verifications) or pay_on_issuance.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -182,35 +176,38 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           pricingModel: {
             type: 'string',
-            enum: ['per-issuance', 'subscription'],
-            description: 'Pricing model: per-issuance charges each time, subscription is periodic',
+            enum: ['pay_on_success', 'pay_on_issuance'],
+            description: 'pay_on_success = charge only for successful verifications; pay_on_issuance = charge on issuance',
           },
-          priceUsd: {
-            type: 'number',
-            description: 'Price in USD (e.g., 0.50 for $0.50, 10 for $10)',
-          },
-          cakEnabled: {
+          complianceAccessKeyEnabled: {
             type: 'boolean',
             default: false,
             description: 'Enable Compliance Access Key (CAK) requirement',
           },
-          subscriptionDays: {
+          paymentFeeSchemaId: {
+            type: 'string',
+            description: 'Optional payment fee schema ID (omit to use default USD8)',
+          },
+          priceUsd: {
             type: 'number',
-            description: 'Subscription duration in days (required for subscription model)',
+            description: 'Optional USD per verification (default 0). Use for verification fee in USD.',
           },
         },
-        required: ['pricingModel', 'priceUsd'],
       },
     },
     {
       name: 'credential_create_verification_programs',
-      description: 'Create verification programs for a schema. Programs define conditions that credentials must meet for verification.',
+      description: 'Create verification programs for a schema and deploy them. Programs define conditions that credentials must meet for verification.',
       inputSchema: {
         type: 'object',
         properties: {
           schemaId: {
             type: 'string',
             description: 'Schema ID (uses last created schema if not provided)',
+          },
+          deploy: {
+            type: 'boolean',
+            description: 'If true (default), deploy each program after create so it becomes active.',
           },
           programs: {
             type: 'array',
@@ -249,6 +246,64 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ['programs'],
       },
     },
+    {
+      name: 'credential_list_templates',
+      description: 'List credential templates (issuance programs) for the authenticated issuer. Returns template IDs and names for use as credentialId in SDK.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          page: { type: 'number', description: 'Page number (1-based)', default: 1 },
+          size: { type: 'number', description: 'Page size', default: 20 },
+          searchStr: { type: 'string', description: 'Optional search string' },
+          sortField: { type: 'string', description: 'Sort field', default: 'create_at' },
+          order: { type: 'string', enum: ['asc', 'desc'], description: 'Sort order', default: 'desc' },
+        },
+      },
+    },
+    {
+      name: 'credential_list_programs',
+      description: 'List verification programs for the authenticated verifier. Returns program IDs and names for use as programId in verifyCredential.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          page: { type: 'number', description: 'Page number (1-based)', default: 1 },
+          size: { type: 'number', description: 'Page size', default: 20 },
+          searchStr: { type: 'string', description: 'Optional search string' },
+          sortField: { type: 'string', description: 'Sort field', default: 'uvpi.create_at' },
+          order: { type: 'string', enum: ['asc', 'desc'], description: 'Sort order', default: 'desc' },
+        },
+      },
+    },
+    {
+      name: 'credential_docs',
+      description: 'Get step-by-step docs for issuance and/or verification flow. Use when the developer asks how to set up credentials or verify.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          flow: {
+            type: 'string',
+            enum: ['issuance', 'verification', 'both'],
+            default: 'both',
+            description: 'Which flow to document',
+          },
+        },
+      },
+    },
+    {
+      name: 'credential_list_schemas',
+      description: 'List credential schemas for the authenticated issuer. Use own_schemas for your schemas or other_schemas to search others.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          page: { type: 'number', description: 'Page number (1-based)', default: 1 },
+          size: { type: 'number', description: 'Page size', default: 20 },
+          searchStr: { type: 'string', description: 'Optional search string' },
+          filterType: { type: 'string', enum: ['own_schemas', 'other_schemas'], description: 'own_schemas or other_schemas', default: 'own_schemas' },
+          sortField: { type: 'string', description: 'Sort field', default: 'create_at' },
+          order: { type: 'string', enum: ['asc', 'desc'], description: 'Sort order', default: 'desc' },
+        },
+      },
+    },
   ],
 }));
 
@@ -272,19 +327,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
       }
 
-      case 'credential_publish_schema': {
-        const validated = PublishSchemaArgsSchema.parse(args);
-        result = await publishSchema(validated);
-        break;
-      }
-
       case 'credential_verify_schema_published': {
         const validated = VerifySchemaPublishedArgsSchema.parse(args);
         result = await verifySchemaPublished(validated);
         break;
       }
 
-      case 'credential_create_template': {
+      case 'credential_create_program': {
         const validated = CreateCredentialTemplateArgsSchema.parse(args);
         result = await createCredentialTemplate(validated);
         break;
@@ -299,6 +348,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'credential_create_verification_programs': {
         const validated = CreateProgramsArgsSchema.parse(args);
         result = await createVerificationPrograms(validated);
+        break;
+      }
+
+      case 'credential_list_templates': {
+        const validated = ListCredentialTemplatesArgsSchema.parse(args ?? {});
+        result = await listCredentialTemplates(validated);
+        break;
+      }
+
+      case 'credential_list_programs': {
+        const validated = ListVerificationProgramsArgsSchema.parse(args ?? {});
+        result = await listVerificationPrograms(validated);
+        break;
+      }
+
+      case 'credential_docs': {
+        const validated = CredentialDocsArgsSchema.parse(args ?? {});
+        result = await credentialDocs(validated);
+        break;
+      }
+
+      case 'credential_list_schemas': {
+        const validated = ListSchemasArgsSchema.parse(args ?? {});
+        result = await listSchemas(validated);
         break;
       }
 

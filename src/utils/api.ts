@@ -5,39 +5,34 @@ import { session } from '../session.js';
 import { ApiResponse } from '../types.js';
 
 /**
- * Generate required headers for API requests
+ * Generate required headers for API requests.
+ * Signature must match dashboard: SHA256(body) -> digest_ts -> AES-ECB -> SHA256(ciphertext WordArray).
  */
 function generateApiHeaders(body: any, dashboardToken?: string): Record<string, string> {
-  const timestamp = Date.now();
-  const bodyStr = JSON.stringify(body || {});
-  
-  // Step 1: SHA256 hash of body
-  const firstHash = CryptoJS.SHA256(bodyStr).toString();
-  
-  // Step 2: Combine with timestamp
+  const timestamp = Date.now().toString();
+  const bodyStr = typeof body === 'string' ? body : JSON.stringify(body || {});
+
+  const firstHash = CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(bodyStr)).toString();
   const combined = `${firstHash}_${timestamp}`;
-  
-  // Step 3: AES-ECB encryption
   const key = CryptoJS.enc.Utf8.parse('WpVog9P8NveQLEJYE2cnjg==');
-  const encrypted = CryptoJS.AES.encrypt(combined, key, {
-    mode: CryptoJS.mode.ECB,
-    padding: CryptoJS.pad.Pkcs7
-  });
-  
-  // Step 4: SHA256 of encrypted result
-  const signature = CryptoJS.SHA256(encrypted.toString()).toString();
-  
+  const encrypted = CryptoJS.AES.encrypt(
+    CryptoJS.enc.Utf8.parse(combined),
+    key,
+    { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 }
+  );
+  const signature = CryptoJS.SHA256(encrypted.ciphertext).toString();
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-signature': signature,
-    'x-timestamp': timestamp.toString(),
+    'x-timestamp': timestamp,
     'x-appversion': 'zkserapi_1.0.0',
   };
-  
+
   if (dashboardToken) {
     headers['x-dashboard-auth'] = dashboardToken;
   }
-  
+
   return headers;
 }
 
@@ -101,20 +96,26 @@ export async function apiRequest<T>(
       headers,
     });
 
-    console.log(`[DEBUG] API Response code: ${response.data?.code}`);
-    
-    // Check for API-level errors (code !== 80000000)
-    if (response.data?.code !== 80000000) {
-      throw new Error(`API returned error: ${response.data?.msg || 'Unknown error'}`);
+    const resp = response.data as any;
+    console.log(`[DEBUG] API Response code: ${resp?.code}, msg: ${resp?.msg ?? '(none)'}`);
+    if (resp?.data != null && typeof resp.data === 'object') {
+      console.log('[DEBUG] API Response data keys:', Object.keys(resp.data));
+    }
+
+    if (resp?.code !== 80000000) {
+      const detail = resp?.data != null ? ` | detail: ${JSON.stringify(resp.data)}` : '';
+      console.error('[DEBUG] API error full response:', JSON.stringify(resp, null, 2));
+      const err = new Error(`API returned error: ${resp?.msg || 'Unknown error'}${detail}`) as Error & { apiResponse?: unknown };
+      err.apiResponse = resp;
+      throw err;
     }
 
     return response.data as ApiResponse<T>;
   } catch (error: any) {
     console.error('[DEBUG] API Error:', error.message);
     if (error.response?.data) {
-      console.error('[DEBUG] Error response:', JSON.stringify(error.response.data, null, 2));
+      console.error('[DEBUG] Error response (full):', JSON.stringify(error.response.data, null, 2));
     }
-    
     const errorMsg = error.response?.data?.msg || error.message;
     throw new Error(`API Error: ${errorMsg}`);
   }

@@ -1,6 +1,6 @@
 /**
- * Create Credential Template
- * Creates a credential template for an issuer
+ * Create Credential Template (issuance program)
+ * Creates a credential template for an issuer. Accepts schemaId and fills schemeType/schemeTitle/credentialName from the schema when provided.
  */
 
 import { z } from 'zod';
@@ -8,9 +8,10 @@ import { session } from '../session.js';
 import { apiRequest } from '../utils/api.js';
 
 export const CreateCredentialTemplateArgsSchema = z.object({
-  credentialName: z.string().describe('Name of the credential'),
-  schemeType: z.string().describe('Schema type identifier'),
-  schemeTitle: z.string().describe('Schema title'),
+  schemaId: z.string().optional().describe('Schema ID to use. When provided, schemeType, schemeTitle and credentialName are fetched from the schema if not given.'),
+  credentialName: z.string().optional().describe('Name of the credential. Filled from schema title when schemaId is provided and this is omitted.'),
+  schemeType: z.string().optional().describe('Schema type identifier. Filled from schema when schemaId is provided and this is omitted.'),
+  schemeTitle: z.string().optional().describe('Schema title. Filled from schema when schemaId is provided and this is omitted.'),
   expirationDuration: z.number().default(365).describe('Expiration duration in days'),
   issueMax: z.number().nullable().default(null).describe('Maximum number of credentials to issue (null for unlimited)'),
   accessibleStartAt: z.string().default('').describe('Start date for accessibility (ISO format or empty)'),
@@ -19,38 +20,66 @@ export const CreateCredentialTemplateArgsSchema = z.object({
   complianceAccessKeyEnabled: z.number().default(0).describe('Compliance access key enabled (0 or 1)'),
 });
 
+interface SchemeByIdResponse {
+  schemeId: string;
+  schemeTitle: string;
+  schemeType: string;
+  [key: string]: unknown;
+}
+
 export async function createCredentialTemplate(
   args: z.infer<typeof CreateCredentialTemplateArgsSchema>
 ) {
-  // Validate inputs
   const validated = CreateCredentialTemplateArgsSchema.parse(args);
 
-  // Get required session data
   const issuerId = session.get('issuerId');
-  const schemaId = session.get('schemaId');
   const dashboardToken = session.get('dashboardToken');
-
   if (!issuerId) {
     throw new Error('No issuer ID found in session. Please authenticate first.');
   }
-
-  if (!schemaId) {
-    throw new Error('No schema ID found in session. Please create a schema first.');
-  }
-
   if (!dashboardToken) {
     throw new Error('No dashboard token found in session. Please authenticate first.');
   }
 
-  console.log('[DEBUG] Creating credential template...');
+  // Resolve schemaId: input takes precedence, then session
+  let schemaId = validated.schemaId ?? session.get('schemaId');
+  let schemeType = validated.schemeType;
+  let schemeTitle = validated.schemeTitle;
+  let credentialName = validated.credentialName;
+
+  // When we have a schemaId, fetch schema to fill missing fields
+  if (schemaId) {
+    const schemeRes = await apiRequest<SchemeByIdResponse>(
+      'POST',
+      '/management/scheme/queryById',
+      { schemeId: schemaId },
+      { 'x-issuer-id': issuerId }
+    );
+    const schemaData = schemeRes.data;
+    schemeType = schemeType ?? schemaData.schemeType;
+    schemeTitle = schemeTitle ?? schemaData.schemeTitle;
+    credentialName = credentialName ?? schemaData.schemeTitle;
+  }
+
+  if (!schemaId) {
+    throw new Error('No schema ID. Provide schemaId or create a schema first (session will have schemaId).');
+  }
+  if (!schemeType || !schemeTitle) {
+    throw new Error('Missing schemeType or schemeTitle. Provide them or pass schemaId so they can be loaded from the schema.');
+  }
+  if (!credentialName) {
+    throw new Error('Missing credentialName. Provide it or pass schemaId so it can be defaulted from the schema title.');
+  }
+
+  console.log('[DEBUG] Creating issuance program (credential template)...');
 
   const templateData = {
-    credentialName: validated.credentialName,
+    credentialName,
     expirationDuration: validated.expirationDuration,
     issueMax: validated.issueMax,
     issuerId,
-    schemeType: validated.schemeType,
-    schemeTitle: validated.schemeTitle,
+    schemeType,
+    schemeTitle,
     schemeId: schemaId,
     accessibleStartAt: validated.accessibleStartAt,
     accessibleEndAt: validated.accessibleEndAt,
@@ -76,39 +105,43 @@ export async function createCredentialTemplate(
 
     console.log('[DEBUG] Credential template created:', response.data);
 
-    // Store template ID in session
     session.set('credentialTemplateId', response.data.credentialId);
 
     return {
       success: true,
-      message: 'Credential template created successfully',
-      templateId: response.data.credentialId,
-      credentialName: validated.credentialName,
+      message: 'Issuance program created successfully',
+      programId: response.data.credentialId,
+      credentialName,
+      schemaId,
       status: response.data.status,
     };
   } catch (error: any) {
-    console.error('[DEBUG] Failed to create credential template:', error.message);
-    throw new Error(`Credential template creation failed: ${error.message}`);
+    console.error('[DEBUG] Failed to create issuance program:', error.message);
+    throw new Error(`Program creation failed: ${error.message}`);
   }
 }
 
 export const createCredentialTemplateToolDefinition = {
-  name: 'create_credential_template',
-  description: 'Create a credential template for the issuer. This should be done after creating a schema and before creating verification programs.',
+  name: 'credential_create_program',
+  description: 'Create an issuance program (credential template) for the issuer. Pass schemaId to fill schemeType, schemeTitle and credentialName from the schema; otherwise provide them or use session schemaId.',
   inputSchema: {
     type: 'object',
     properties: {
+      schemaId: {
+        type: 'string',
+        description: 'Schema ID. When provided, schemeType, schemeTitle and credentialName are fetched from the schema if omitted.',
+      },
       credentialName: {
         type: 'string',
-        description: 'Name of the credential',
+        description: 'Name of the credential. Defaults to schema title when schemaId is provided.',
       },
       schemeType: {
         type: 'string',
-        description: 'Schema type identifier (e.g., "nftHolderCredential")',
+        description: 'Schema type identifier. Filled from schema when schemaId is provided.',
       },
       schemeTitle: {
         type: 'string',
-        description: 'Schema title',
+        description: 'Schema title. Filled from schema when schemaId is provided.',
       },
       expirationDuration: {
         type: 'number',
@@ -135,6 +168,6 @@ export const createCredentialTemplateToolDefinition = {
         description: 'Compliance access key enabled (0 or 1)',
       },
     },
-    required: ['credentialName', 'schemeType', 'schemeTitle'],
+    required: [],
   },
 };

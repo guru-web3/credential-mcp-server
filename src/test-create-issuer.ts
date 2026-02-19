@@ -73,15 +73,15 @@ async function createSampleIssuer() {
       revokeFlag: 0,
       complianceAccessKeyEnabled: 0,
     });
-    console.log('✅ Credential template created successfully!');
-    console.log(`   Template ID: ${templateResult.templateId}\n`);
+    console.log('✅ Issuance program created successfully!');
+    console.log(`   Program ID: ${templateResult.programId}\n`);
 
     // Step 4: Setup Pricing
     console.log('📝 Step 4: Setting Up Pricing');
     const pricingResult = await setupPricing({
       pricingModel: 'pay_on_success',
       complianceAccessKeyEnabled: false,
-      // Don't provide paymentFeeSchemaId - let backend handle it
+      priceUsd: 0,
     });
     console.log('✅ Pricing configured successfully!');
     console.log(`   Model: ${pricingResult.pricingModel}`);
@@ -103,6 +103,7 @@ async function createSampleIssuer() {
     // Step 5: Create Verification Programs
     console.log('📝 Step 5: Creating Verification Programs');
     const programsResult = await createVerificationPrograms({
+      deploy: true,
       programs: [
         {
           programName: 'nft_holder_standard',
