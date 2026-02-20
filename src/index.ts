@@ -8,6 +8,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { authenticate, AuthenticateArgsSchema } from './tools/authenticate.js';
+import { getLoginChallenge, GetLoginChallengeArgsSchema } from './tools/get-login-challenge.js';
 import { createSchema, CreateSchemaArgsSchema } from './tools/create-schema.js';
 import { createCredentialTemplate, CreateCredentialTemplateArgsSchema } from './tools/create-credential-template.js';
 import { setupPricing, SetupPricingArgsSchema } from './tools/setup-pricing.js';
@@ -35,17 +36,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: 'credential_authenticate',
-      description: 'Authenticate with your private key to access credential management APIs. Required before using other tools.',
+      description: 'Authenticate after you have credentials. Use (1) privateKey (or CREDENTIAL_MCP_PRIVATE_KEY) for direct auth, or (2) the signed result from the signer page: pass credentialsJson (full JSON from signer) or walletAddress + signature + timestamp. If the user gives ONLY a wallet address and no private key, do NOT call this yet—call credential_get_login_challenge first to get the signer URL, then credential_authenticate with the signed JSON.',
       inputSchema: {
         type: 'object',
         properties: {
+          credentialsJson: {
+            type: 'string',
+            description: 'Full JSON from the signer page (environment, walletAddress, signature, timestamp). Paste the copied JSON here to authenticate in one step. Overrides individual fields if both are provided.',
+          },
           privateKey: {
             type: 'string',
-            description: 'Ethereum wallet private key (64 hex characters, with or without 0x prefix)',
-          },
-          partnerId: {
-            type: 'string',
-            description: 'Partner ID (optional, will be retrieved from API)',
+            description: 'Ethereum wallet private key (omit when using message-signing; can use CREDENTIAL_MCP_PRIVATE_KEY env instead)',
           },
           environment: {
             type: 'string',
@@ -53,8 +54,39 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             default: 'staging',
             description: 'Target environment',
           },
+          walletAddress: {
+            type: 'string',
+            description: 'For message-signing: wallet address from signer page output (only use together with signature and timestamp from signer)',
+          },
+          signature: {
+            type: 'string',
+            description: 'For message-signing: signature from signer page output',
+          },
+          timestamp: {
+            description: 'For message-signing: timestamp in ms from signer page (number or string)',
+            oneOf: [{ type: 'number' }, { type: 'string' }],
+          },
         },
-        required: ['privateKey'],
+      },
+    },
+    {
+      name: 'credential_get_login_challenge',
+      description: 'Recommended first step when user wants to authenticate with a wallet address (no private key). Call this with the user’s wallet address to get a one-time signerUrl and login message. User opens signerUrl in a browser, signs with their wallet, then copies the JSON and you call credential_authenticate with that JSON (or credentialsJson). Use this whenever the user provides only a wallet address for auth.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          walletAddress: {
+            type: 'string',
+            description: 'Ethereum wallet address (0x...) that will sign the message',
+          },
+          environment: {
+            type: 'string',
+            enum: ['staging', 'production'],
+            default: 'staging',
+            description: 'API environment',
+          },
+        },
+        required: ['walletAddress'],
       },
     },
     {
@@ -316,8 +348,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     switch (name) {
       case 'credential_authenticate': {
-        const validated = AuthenticateArgsSchema.parse(args);
+        const validated = AuthenticateArgsSchema.parse(args ?? {});
         result = await authenticate(validated);
+        break;
+      }
+
+      case 'credential_get_login_challenge': {
+        const validated = GetLoginChallengeArgsSchema.parse(args ?? {});
+        result = await getLoginChallenge(validated);
         break;
       }
 

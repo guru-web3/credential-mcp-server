@@ -16,7 +16,7 @@ export type CredentialDocsArgs = z.infer<typeof CredentialDocsArgsSchema>;
 
 const ISSUANCE_STEPS = `## Issuance flow (MCP-first)
 
-1. **Authenticate** – \`credential_authenticate\` (privateKey, environment: staging|production). Saves partnerId, issuerId, issuerDid.
+1. **Authenticate** – Recommended: call \`credential_get_login_challenge\` with the user’s wallet address, have them open the signer URL and sign, then \`credential_authenticate\` with the signed JSON (credentialsJson). Alternative: \`credential_authenticate\` with privateKey and environment (staging|production). Saves partnerId, issuerId, issuerDid.
 2. **Create schema** – \`credential_create_schema\` (schemaName, schemaType, dataPoints). Saves schemaId; schema is published when created.
 3. **Verify schema** – \`credential_verify_schema_published\` (schemaId optional). Confirms schema is published and accessible.
 4. **Create program** – \`credential_create_program\` (credentialName, schemeType, schemeTitle, expirationDuration, issueMax, ...). This is your **issuance program**; use returned programId as \`credentialId\` in SDK.
@@ -27,7 +27,7 @@ const ISSUANCE_STEPS = `## Issuance flow (MCP-first)
 
 const VERIFICATION_STEPS = `## Verification flow (MCP-first)
 
-1. **Authenticate** – \`credential_authenticate\` (same as issuer). Saves verifierId, verifierDid.
+1. **Authenticate** – Same as issuance: recommended wallet-address flow via \`credential_get_login_challenge\` then \`credential_authenticate\` with signed JSON; or \`credential_authenticate\` with privateKey. Saves verifierId, verifierDid.
 2. **Schema** – You need a published schema (create via issuance flow or use existing). Use its schemaId for programs.
 3. **Create programs** – \`credential_create_verification_programs\` (schemaId, programs: [{ programName, conditions }]). Conditions: attribute, operator ('>','>=','<','<=','=','!='), value.
 4. **Apply/deploy** – If your program stays in Draft, apply it in the dashboard (Verifier → Programs → Details → Apply) or confirm whether create already activates it.

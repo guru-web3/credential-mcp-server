@@ -1,27 +1,96 @@
 # Animoca Credential MCP Server
 
-AI-powered automation for credential schema creation, pricing setup, verification programs, and deployment.
+Use **natural language** in Cursor (or other MCP clients) to manage AIR credentials: create schemas, set pricing, create issuance and verification programs, and deploy. No need to remember tool names—just describe what you want.
 
-## Installation
+---
 
-### Quick Start (npx)
+## How to deploy (so others can use from Cursor MCP)
+
+Choose one way to make the server available; then others add it in **Cursor → Settings → MCP** (or **Cursor → Preferences → MCP** on some versions).
+
+### Deploy option 1: Publish to npm (easiest for others)
+
+1. **Publish the package** (from this repo):
+   ```bash
+   npm login
+   npm publish --access public
+   ```
+   (Use a scoped package or private registry if you prefer.)
+
+2. **Tell others** to add this in Cursor MCP settings:
+   ```json
+   {
+     "mcpServers": {
+       "animoca-credentials": {
+         "command": "npx",
+         "args": ["-y", "@animoca/credential-mcp-server"],
+         "env": {}
+       }
+     }
+   }
+   ```
+   They need **Node.js** installed. No clone or build.
+
+### Deploy option 2: Use from source (no npm publish)
+
+1. **Share the repo** (Git clone URL or copy of the repo).
+
+2. **Tell others** to run:
+   ```bash
+   git clone <repo-url>
+   cd credential-mcp-server
+   npm install
+   npm run build
+   ```
+
+3. **They add in Cursor MCP** (replace with their actual paths). If you get **`spawn node ENOENT`**, use the **full path to `node`** (see [Troubleshooting](#troubleshooting-spawn-node-enoent) below):
+   ```json
+   {
+     "mcpServers": {
+       "animoca-credentials": {
+         "command": "/FULL/PATH/TO/node",
+         "args": ["/FULL/PATH/TO/credential-mcp-server/dist/index.js"]
+       }
+     }
+   }
+   ```
+   Example (macOS with Homebrew Node): `"command": "/opt/homebrew/bin/node"`. On Windows use e.g. `"C:\\Program Files\\nodejs\\node.exe"` and `"C:/Users/Me/credential-mcp-server/dist/index.js"`.
+
+After adding the server, they **restart Cursor** (or reload the window), then in chat they authenticate once and use natural language (see below).
+
+---
+
+## For someone else: use this in 3 steps
+
+### 1. Add the MCP
+
+**Option A – From source (this repo)**
+
 ```bash
-npx @animoca/credential-mcp-server
+git clone <this-repo-url>
+cd credential-mcp-server
+npm install
+npm run build
 ```
 
-### Install Globally
-```bash
-npm install -g @animoca/credential-mcp-server
+Then in **Cursor**: open **Settings → MCP**, add a server and use the config below. If you see **`spawn node ENOENT`**, use the full path to `node` for `command` (see [Troubleshooting](#troubleshooting-spawn-node-enoent)).
+
+```json
+{
+  "mcpServers": {
+    "animoca-credentials": {
+      "command": "/FULL/PATH/TO/node",
+      "args": ["/ABSOLUTE/PATH/TO/credential-mcp-server/dist/index.js"]
+    }
+  }
+}
 ```
 
-### Install Locally
-```bash
-npm install @animoca/credential-mcp-server
-```
+Find your `node` path: in a terminal run `which node` (e.g. `/opt/homebrew/bin/node` or `~/.nvm/versions/node/v20.x.x/bin/node`).
 
-## Usage with Cursor
+**Option B – With npx (if published to npm)**
 
-Add to your Cursor MCP settings (`~/Library/Application Support/Cursor/mcp.json` on macOS):
+In Cursor **Settings → MCP**, add:
 
 ```json
 {
@@ -35,177 +104,187 @@ Add to your Cursor MCP settings (`~/Library/Application Support/Cursor/mcp.json`
 }
 ```
 
-Or use locally installed version:
+- **macOS Cursor config file:** `~/Library/Application Support/Cursor/User/globalStorage/rooveterinaryinc.roo-cline/settings/cline_mcp_settings.json` (or use Settings → MCP UI).  
+- **Windows:** `%APPDATA%\Cursor\...` (or add via Settings → MCP).
 
-```json
-{
-  "mcpServers": {
-    "animoca-credentials": {
-      "command": "node",
-      "args": [
-        "/path/to/credential-mcp-server/dist/index.js"
-      ]
-    }
-  }
-}
-```
+Restart Cursor (or reload the window) after changing MCP settings.
 
-## Usage with Claude Desktop
+### 2. Authenticate once
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+**Recommended: wallet address (no private key)**  
+Say you want to authenticate with your **wallet address**. The AI will call `credential_get_login_challenge` and give you a signer URL. Open it in a browser, sign the message with your wallet, copy the JSON result, and paste it back (or say “use this” and paste). The AI then calls `credential_authenticate` with that JSON. You never share a private key.
 
-```json
-{
-  "mcpServers": {
-    "animoca-credentials": {
-      "command": "npx",
-      "args": ["-y", "@animoca/credential-mcp-server"]
-    }
-  }
-}
-```
+- *“Authenticate me for staging with my wallet 0x…”*  
+- *“I want to use my wallet address to log in, no private key.”*
 
-## Available Tools
+**Alternative: private key**  
+You can instead provide your **Ethereum wallet private key** (64 hex chars, with or without `0x`) when the AI asks. The AI will call the auth tool directly. Use this only if you prefer not to use the signer page.
 
-### 1. `credential_authenticate`
-Authenticate with your private key to access credential management APIs.
+- *“Authenticate for staging. I’ll paste my wallet private key.”*
 
-**Parameters:**
-- `privateKey` (required): ES256 private key in PEM format
-- `partnerId` (optional): Partner ID
-- `environment` (optional): 'development' | 'staging' | 'production' (default: 'staging')
+You only need to authenticate once per session (or after restarting Cursor).
 
-**Example:**
-```
-AI: "I'll help you set up credentials. First, I need your ES256 private key to authenticate."
-User: [provides private key]
-AI uses: credential_authenticate
-```
+**Signer page:** The signer is a Next.js app in `signer-app/`, deployable to Netlify for use across devices and browsers. Locally, run `npm run signer` to serve the static HTML signer at http://localhost:3747, or run the Next.js signer with `npm run signer:next` (see [Deploy signer to Netlify](#deploy-signer-to-netlify)). When using wallet-address auth, the AI will use `credential_get_login_challenge` to get a URL; open that URL in a browser (or the signer) and paste the message/timestamp if needed.
 
-### 2. `credential_create_schema`
-Create and publish a new credential schema with specified data points.
+### 3. Ask in natural language
 
-**Parameters:**
-- `schemaName` (required): Schema name (e.g., 'trading-volume-credential')
-- `schemaType` (required): Schema type identifier (e.g., 'tradingVolumeCredential')
-- `dataPoints` (required): Array of {name, type, description}
-- `description` (optional): Schema description
-- `version` (optional): Schema version (default: '1.0')
+After auth, you can say things like:
 
-**Example:**
-```
-User: "Create a schema for tracking trading volume"
-AI uses: credential_create_schema with:
-  - schemaName: "trading-volume-credential"
-  - schemaType: "tradingVolumeCredential"
-  - dataPoints: [{name: "totalVolume", type: "number"}, ...]
-```
+- *“Create a schema for age verification with an integer field called age.”*
+- *“Set pricing for this schema to pay on success, no extra fee.”*
+- *“Create an issuance program for the last schema I created.”*
+- *“Create a verification program that checks age is at least 18.”*
+- *“List my verification programs so I can get the program ID for my app.”*
+- *“List my credential templates.”*
+- *“Show me the steps to issue and verify credentials in my app.”*
 
-### 3. `credential_setup_pricing`
-Configure pricing model for a credential schema.
+The AI will pick the right tools and parameters. You don’t need to know tool names or JSON shapes.
 
-**Parameters:**
-- `schemaId` (optional): Schema ID (uses last created if not provided)
-- `pricingModel` (required): 'per-issuance' | 'subscription'
-- `priceUsd` (required): Price in USD (e.g., 0.50 for $0.50)
-- `cakEnabled` (optional): Enable CAK requirement (default: false)
-- `subscriptionDays` (optional): Required for subscription model
+---
 
-**Example:**
-```
-User: "Set pricing to $0.50 per credential"
-AI uses: credential_setup_pricing with:
-  - pricingModel: "per-issuance"
-  - priceUsd: 0.50
-```
+## What you can ask (natural language examples)
 
-### 4. `credential_create_verification_programs`
-Create verification programs that define conditions for credential verification.
+| You say | What the MCP does |
+|--------|--------------------|
+| *“Authenticate with staging using my wallet address 0x…”* | `credential_get_login_challenge` first (signer URL), then `credential_authenticate` with signed JSON |
+| *“Authenticate with my private key.”* | `credential_authenticate` (private key) |
+| *“Create a schema for NFT holders with a field numberOfNfts (integer).”* | `credential_create_schema` |
+| *“Create a schema for age with one field: age, number.”* | `credential_create_schema` |
+| *“Check that my schema is published.”* | `credential_verify_schema_published` |
+| *“Set pricing for this schema: pay on success, no USD fee.”* | `credential_setup_pricing` |
+| *“Create an issuance program (credential template) for my last schema.”* | `credential_create_program` |
+| *“Create verification programs: age_over_18 where age >= 18.”* | `credential_create_verification_programs` |
+| *“Create three verification programs: bronze (volume >= 1000), silver (>= 10000), gold (>= 100000).”* | `credential_create_verification_programs` with multiple programs |
+| *“List my verification programs.”* | `credential_list_programs` |
+| *“List my credential templates.”* | `credential_list_templates` |
+| *“List my schemas.”* | `credential_list_schemas` |
+| *“How do I issue and verify credentials in my app?”* | `credential_docs` (issuance + verification steps and links) |
 
-**Parameters:**
-- `schemaId` (optional): Schema ID (uses last created if not provided)
-- `programs` (required): Array of {programName, conditions[]}
+---
 
-**Example:**
-```
-User: "Create tier programs: Bronze (>= 1000), Silver (>= 10000), Gold (>= 100000)"
-AI uses: credential_create_verification_programs with:
-  - programs: [
-      {programName: "bronze_tier", conditions: [{attribute: "volume", operator: ">=", value: 1000}]},
-      {programName: "silver_tier", conditions: [{attribute: "volume", operator: ">=", value: 10000}]},
-      {programName: "gold_tier", conditions: [{attribute: "volume", operator: ">=", value: 100000}]}
-    ]
-```
+## Available tools (for the AI)
 
-## Workflow Example
+| Tool | Purpose |
+|------|--------|
+| `credential_get_login_challenge` | **Recommended.** When user has only a wallet address: get one-time message and signer URL; user signs in browser, then use result in `credential_authenticate`. |
+| `credential_authenticate` | Log in with (1) private key, or (2) signed JSON from signer page (after `credential_get_login_challenge`). Required before other tools. |
+| `credential_create_schema` | Create and publish a schema (name, type, data points). |
+| `credential_verify_schema_published` | Verify a schema is published and ready for programs. |
+| `credential_setup_pricing` | Set pricing model for a schema (e.g. pay_on_success, optional price). |
+| `credential_create_program` | Create an issuance program (credential template) for a schema. |
+| `credential_create_verification_programs` | Create (and deploy) verification programs with conditions. |
+| `credential_list_schemas` | List your (or others’) schemas. |
+| `credential_list_templates` | List issuance programs (templates) for use as credentialId. |
+| `credential_list_programs` | List verification programs for use as programId in verifyCredential. |
+| `credential_docs` | Get issuance and/or verification flow docs and links. |
 
-Here's a typical conversation flow with AI using this MCP server:
+---
 
-```
-User: "I need to create a credential system for NFT holders"
+## Typical flow (natural language)
 
-AI: "I'll help you set up a complete credential system for NFT holders. First, I need your ES256 private key to authenticate."
+1. **“Authenticate for staging with my wallet 0x…”** → AI gives you signer URL; you sign in browser, paste JSON back; AI completes auth. (Or: **“Authenticate with my private key”** → you paste key when asked.)  
+2. **“Create a schema for [X] with fields [Y].”**  
+3. **“Set pricing: pay on success.”** (or “per-issuance $0.50”)  
+4. **“Create an issuance program for that schema.”**  
+5. **“Create a verification program that [condition].”** (e.g. age >= 18)  
+6. **“List my verification programs.”** → Copy programId for your app.  
+7. **“How do I verify in my app?”** → Use `credential_docs` and programId in AIR Kit.
 
-User: [provides private key]
-
-AI: [calls credential_authenticate]
-"✓ Authentication successful! Now let's design your schema. What attributes should the NFT holder credential have?"
-
-User: "Track the collection address, number of NFTs held, and holder tier"
-
-AI: [calls credential_create_schema]
-"✓ Schema created! ID: c28sr061lhd9i0004615Yi
-
-Now for pricing - would you like per-issuance or subscription pricing?"
-
-User: "Per-issuance, $1.00 per credential"
-
-AI: [calls credential_setup_pricing]
-"✓ Pricing configured: $1.00 per issuance
-
-Let's create verification programs. I suggest:
-- Standard Holder: >= 1 NFT
-- Premium Holder: >= 10 NFTs  
-- Whale: >= 100 NFTs
-
-Should I create these?"
-
-User: "Yes"
-
-AI: [calls credential_create_verification_programs]
-"✓ Created 3 verification programs!
-- nft_holder_standard: [programId1]
-- nft_holder_premium: [programId2]  
-- nft_holder_whale: [programId3]
-
-Your credential system is ready! Next steps:
-1. Generate issuer template configuration
-2. Set up verifiers
-3. Deploy to production
-
-Would you like help with any of these?"
-```
+---
 
 ## Development
 
 ### Build
+
 ```bash
 npm run build
 ```
 
-### Watch Mode
+### Watch
+
 ```bash
 npm run watch
 ```
 
 ### Test with MCP Inspector
+
 ```bash
 npm run inspector
 ```
 
-## Environment Variables
+### Environment
 
-None required - all configuration is done through tool parameters during authentication.
+- **MCP server:** No env vars are required for basic use. Environment (staging/production) and API URLs are set when you authenticate.
+- **Signer URL:** To use the **deployed** Next.js signer (e.g. on Netlify) so `credential_get_login_challenge` returns a public URL, set **`CREDENTIAL_SIGNER_URL`** to your signer app URL (e.g. `https://your-signer.netlify.app`). If unset, the default is `http://localhost:3747` (for local `npm run signer`).
+
+---
+
+## Deploy signer to Netlify
+
+The signer is a Next.js app in **`signer-app/`**, built as a static export so it can be deployed to Netlify and used from any device or browser.
+
+1. **Build locally (optional):**
+   ```bash
+   cd signer-app
+   npm install
+   ```
+   For WalletConnect (e.g. mobile wallet scan), set **`NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`** (get a free project ID at [WalletConnect Cloud](https://cloud.walletconnect.com/)). Copy `signer-app/.env.example` to `signer-app/.env.local` and set the value. Injected wallets (MetaMask, etc.) work without it.
+   ```bash
+   npm run build
+   ```
+   This produces the `out/` directory (static HTML/JS/CSS).
+
+2. **Deploy to Netlify:**
+   - Connect your Git repo to Netlify.
+   - Set **Base directory** to `signer-app`.
+   - Build command: `npm run build` (default).
+   - Publish directory: `out` (Netlify will use `signer-app/netlify.toml` if present).
+   - (Optional) In Netlify **Environment variables**, add **`NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`** with your [WalletConnect Cloud](https://cloud.walletconnect.com/) project ID so mobile users can connect via WalletConnect.
+   - Deploy. Note your site URL (e.g. `https://credential-signer.netlify.app`).
+
+3. **Point the MCP server at the deployed signer:**  
+   When running the MCP server (e.g. in Cursor), set **`CREDENTIAL_SIGNER_URL`** to your Netlify URL so `credential_get_login_challenge` returns links that open the deployed signer. Example (in your MCP config or env):
+   ```json
+   "env": { "CREDENTIAL_SIGNER_URL": "https://credential-signer.netlify.app" }
+   ```
+
+Local fallback: **`npm run signer`** still serves the static `static/index.html` at http://localhost:3747 for local dev without building the Next.js app.
+
+---
+
+## Troubleshooting: `spawn node ENOENT`
+
+**Symptom:** Cursor MCP shows `A system error occurred (spawn node ENOENT)`.
+
+**Cause:** The `command` must be the **full path to the `node` binary**, not the word `"node"`. Cursor doesn’t use your terminal PATH when it spawns the MCP.
+
+**Fix – use the generated config (easiest):**
+
+From the project root, run:
+
+```bash
+cd /Users/guru/Documents/animoca/credential-mcp-server
+./scripts/mcp-config-for-cursor.sh
+```
+
+Copy the printed JSON and paste it into **Cursor → Settings → MCP**. It will have your real `node` path and project path filled in.
+
+**Fix – manual:** In a terminal run `which node` and use that path as `command`. Example (your path will differ):
+
+```json
+{
+  "mcpServers": {
+    "animoca-credentials": {
+      "command": "/opt/homebrew/bin/node",
+      "args": ["/Users/guru/Documents/animoca/credential-mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+With **nvm**/ **fnm**, `command` might be `/Users/guru/.nvm/versions/node/v20.10.0/bin/node` — use whatever `which node` prints.
+
+---
 
 ## License
 

@@ -25,3 +25,7 @@ npm-debug.log*
 coverage/
 .nyc_output/
 *.tsbuildinfo
+
+# Next.js signer app
+signer-app/.next/
+signer-app/out/

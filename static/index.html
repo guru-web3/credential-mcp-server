@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIR Credential – Sign login message</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 24px;
+      color: #1a1a1a;
+      background: #f8f9fa;
+    }
+    h1 { font-size: 1.25rem; margin-bottom: 8px; }
+    .sub { color: #666; font-size: 0.875rem; margin-bottom: 24px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.875rem; }
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-family: inherit;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    textarea.readonly, input.readonly {
+      background: #f0f0f0;
+      cursor: not-allowed;
+      color: #333;
+    }
+    .field { margin-bottom: 16px; }
+    .required-note { color: #666; font-size: 0.8125rem; margin-top: 4px; }
+    .no-prefill { padding: 16px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; margin-bottom: 16px; font-size: 0.875rem; }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #0052a3; }
+    button:disabled { background: #999; cursor: not-allowed; }
+    .result {
+      margin-top: 24px;
+      padding: 16px;
+      background: #e8f4fc;
+      border: 1px solid #b3d9f2;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+    }
+    .result h3 { margin: 0 0 8px 0; font-size: 0.9375rem; }
+    pre { margin: 0; white-space: pre-wrap; word-break: break-all; }
+    .copy-row { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+    .copy-btn {
+      background: #1a1a1a;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background: #333; }
+    .copied { color: #0a0; font-size: 0.875rem; }
+    .step { margin-bottom: 20px; }
+    .step-num { font-weight: 700; color: #0066cc; }
+    .error { color: #c00; font-size: 0.875rem; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Sign login message for AIR Credential MCP</h1>
+  <p class="sub">No private key is sent to the app. Sign in your wallet, then copy the result into <code>credential_authenticate</code>.</p>
+
+  <div id="noPrefill" class="no-prefill" hidden>
+    Open the <strong>signer URL</strong> from <code>credential_get_login_challenge</code> so the required message and timestamp are prefilled. Do not edit them.
+  </div>
+
+  <div class="step">
+    <span class="step-num">1.</span> Required message and timestamp (prefilled from link – do not edit).
+  </div>
+
+  <div class="field">
+    <label for="message">Login message (required – from link)</label>
+    <textarea id="message" placeholder="Open the signer URL from credential_get_login_challenge to load the required message."></textarea>
+    <p id="messageNote" class="required-note" hidden>Prefilled from link. Do not edit – this exact message must be signed.</p>
+  </div>
+  <div class="field">
+    <label for="timestamp">Timestamp (milliseconds, required – from link)</label>
+    <input type="text" id="timestamp" placeholder="Prefilled from link." />
+  </div>
+
+  <div class="step">
+    <span class="step-num">2.</span> Connect your wallet and sign the message.
+  </div>
+  <button type="button" id="signBtn">Connect wallet and sign</button>
+  <p id="error" class="error" aria-live="polite"></p>
+
+  <div id="result" class="result" hidden>
+    <h3>Result – copy this into credential_authenticate</h3>
+    <pre id="resultJson"></pre>
+    <div class="copy-row">
+      <button type="button" class="copy-btn" id="copyBtn">Copy JSON</button>
+      <span id="copied" class="copied" hidden>Copied.</span>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const messageEl = document.getElementById('message');
+      const timestampEl = document.getElementById('timestamp');
+      const signBtn = document.getElementById('signBtn');
+      const errorEl = document.getElementById('error');
+      const resultDiv = document.getElementById('result');
+      const resultJson = document.getElementById('resultJson');
+      const copyBtn = document.getElementById('copyBtn');
+      const copiedEl = document.getElementById('copied');
+
+      function clearError() {
+        errorEl.textContent = '';
+        errorEl.hidden = true;
+      }
+      function showError(msg) {
+        errorEl.textContent = msg;
+        errorEl.hidden = false;
+      }
+
+      // Prefill from URL hash (#m=base64message&t=timestamp) and lock fields so user cannot edit
+      const hash = window.location.hash.slice(1);
+      const noPrefillEl = document.getElementById('noPrefill');
+      const messageNoteEl = document.getElementById('messageNote');
+      if (hash) {
+        const params = new URLSearchParams(hash);
+        const m = params.get('m');
+        const t = params.get('t');
+        if (m) {
+          try {
+            const raw = decodeURIComponent(m);
+            messageEl.value = new TextDecoder().decode(Uint8Array.from(atob(raw), c => c.charCodeAt(0)));
+          } catch (e) {
+            try { messageEl.value = atob(m); } catch (_) { messageEl.placeholder = 'Could not decode message from URL'; }
+          }
+        }
+        if (t) timestampEl.value = t;
+        if (messageEl.value.trim() && timestampEl.value.trim()) {
+          messageEl.readOnly = true;
+          timestampEl.readOnly = true;
+          messageEl.classList.add('readonly');
+          timestampEl.classList.add('readonly');
+          messageNoteEl.hidden = false;
+        }
+      } else {
+        noPrefillEl.hidden = false;
+        messageEl.readOnly = true;
+        timestampEl.readOnly = true;
+        messageEl.classList.add('readonly');
+        timestampEl.classList.add('readonly');
+      }
+
+      signBtn.disabled = !messageEl.value.trim() || !timestampEl.value.trim();
+
+      signBtn.addEventListener('click', async function () {
+        clearError();
+        const message = messageEl.value.trim();
+        const ts = timestampEl.value.trim();
+        if (!message || !ts) {
+          showError('Please enter both the login message and the timestamp.');
+          return;
+        }
+        const timestamp = Number(ts);
+        if (!Number.isFinite(timestamp)) {
+          showError('Timestamp must be a number (milliseconds).');
+          return;
+        }
+
+        if (!window.ethereum) {
+          showError('No wallet found. Install MetaMask or another Web3 wallet.');
+          return;
+        }
+
+        signBtn.disabled = true;
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const address = (accounts && accounts[0]) || '';
+          if (!address) {
+            showError('No account selected.');
+            signBtn.disabled = false;
+            return;
+          }
+          const signature = await window.ethereum.request({
+            method: 'personal_sign',
+            params: [message, address],
+          });
+          const payload = {
+            walletAddress: address.toLowerCase(),
+            signature: signature,
+            timestamp: timestamp,
+          };
+          resultJson.textContent = JSON.stringify(payload, null, 2);
+          resultDiv.hidden = false;
+          copiedEl.hidden = true;
+        } catch (e) {
+          showError(e.message || 'Signing failed.');
+        }
+        signBtn.disabled = false;
+      });
+
+      copyBtn.addEventListener('click', function () {
+        const text = resultJson.textContent;
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(function () {
+          copiedEl.hidden = false;
+          setTimeout(function () { copiedEl.hidden = true; }, 2000);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

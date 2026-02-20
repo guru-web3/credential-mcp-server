@@ -11,7 +11,9 @@
     "build": "tsc && chmod +x bin/credential-mcp.js",
     "watch": "tsc --watch",
     "prepare": "npm run build",
-    "inspector": "npx @modelcontextprotocol/inspector node dist/index.js"
+    "inspector": "npx @modelcontextprotocol/inspector node dist/index.js",
+    "signer": "npx -y serve static -p 3747",
+    "signer:next": "cd signer-app && npm run build && npx -y serve out -p 3748"
   },
   "keywords": [
     "mcp",
