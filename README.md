@@ -124,7 +124,7 @@ You can instead provide your **Ethereum wallet private key** (64 hex chars, with
 
 You only need to authenticate once per session (or after restarting Cursor).
 
-**Signer page:** The signer is a Next.js app in `signer-app/`, deployable to Netlify for use across devices and browsers. Locally, run `npm run signer` to serve the static HTML signer at http://localhost:3747, or run the Next.js signer with `npm run signer:next` (see [Deploy signer to Netlify](#deploy-signer-to-netlify)). When using wallet-address auth, the AI will use `credential_get_login_challenge` to get a URL; open that URL in a browser (or the signer) and paste the message/timestamp if needed.
+**Signer page:** The signer is a Next.js app in `signer-app/`, deployable to Netlify for use across devices and browsers. Locally, run `npm run signer` to serve the static HTML signer at https://credential-challenge-signer.netlify.app, or run the Next.js signer with `npm run signer:next` (see [Deploy signer to Netlify](#deploy-signer-to-netlify)). When using wallet-address auth, the AI will use `credential_get_login_challenge` to get a URL; open that URL in a browser (or the signer) and paste the message/timestamp if needed.
 
 ### 3. Ask in natural language
 
@@ -215,7 +215,7 @@ npm run inspector
 ### Environment
 
 - **MCP server:** No env vars are required for basic use. Environment (staging/production) and API URLs are set when you authenticate.
-- **Signer URL:** To use the **deployed** Next.js signer (e.g. on Netlify) so `credential_get_login_challenge` returns a public URL, set **`CREDENTIAL_SIGNER_URL`** to your signer app URL (e.g. `https://your-signer.netlify.app`). If unset, the default is `http://localhost:3747` (for local `npm run signer`).
+- **Signer URL:** To use the **deployed** Next.js signer (e.g. on Netlify) so `credential_get_login_challenge` returns a public URL, set **`CREDENTIAL_SIGNER_URL`** to your signer app URL (e.g. `https://your-signer.netlify.app`). If unset, the default is `https://credential-challenge-signer.netlify.app` (for local `npm run signer`).
 
 ---
 
@@ -248,7 +248,7 @@ The signer is a Next.js app in **`signer-app/`**, built as a static export so it
    "env": { "CREDENTIAL_SIGNER_URL": "https://credential-signer.netlify.app" }
    ```
 
-Local fallback: **`npm run signer`** still serves the static `static/index.html` at http://localhost:3747 for local dev without building the Next.js app.
+Local fallback: **`npm run signer`** still serves the static `static/index.html` at https://credential-challenge-signer.netlify.app for local dev without building the Next.js app.
 
 ---
 

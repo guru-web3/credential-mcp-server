@@ -26,7 +26,7 @@ export async function getLoginChallenge(args: z.infer<typeof GetLoginChallengeAr
   const isoTimestamp = date.toISOString();
   const loginMessage = buildLoginMessage(addr, isoTimestamp);
 
-  const signerBaseUrl = process.env.CREDENTIAL_SIGNER_URL || 'http://localhost:3747';
+  const signerBaseUrl = process.env.CREDENTIAL_SIGNER_URL || 'https://credential-challenge-signer.netlify.app';
   const signerUrl = `${signerBaseUrl}/#m=${encodeURIComponent(Buffer.from(loginMessage, 'utf8').toString('base64'))}&t=${timestamp}`;
 
   return {
