@@ -3,12 +3,21 @@ import axios from 'axios';
 import CryptoJS from 'crypto-js';
 import { session } from '../session.js';
 
+const pricingModelEnum = z.enum(['pay_on_success', 'pay_on_issuance']).optional().default('pay_on_success');
+
 export const SetupPricingArgsSchema = z.object({
   schemaId: z.string().optional().describe('Schema ID (uses last created schema if not provided)'),
-  pricingModel: z.enum(['pay_on_success', 'pay_on_issuance']).optional().default('pay_on_success').describe('Pricing model: pay_on_success (only charged for successful verifications) or pay_on_issuance'),
-  complianceAccessKeyEnabled: z.boolean().optional().default(false).describe('Enable Compliance Access Key (CAK) requirement'),
+  pricingModel: z
+    .union([
+      pricingModelEnum,
+      z.string().transform((s) => (String(s).toLowerCase().includes('issuance') ? 'pay_on_issuance' : 'pay_on_success')),
+    ])
+    .optional()
+    .default('pay_on_success')
+    .describe('Pricing model: pay_on_success (only charged for successful verifications) or pay_on_issuance'),
+  complianceAccessKeyEnabled: z.coerce.boolean().optional().default(false).describe('Enable Compliance Access Key (CAK) requirement'),
   paymentFeeSchemaId: z.string().optional().describe('Payment fee schema ID (default is USD8 standard: 0x64676f3921f98b72cf26dc0ac617fcade0189ae5244fa1cd614c18fb89e1be87)'),
-  priceUsd: z.number().min(0).optional().default(0).describe('USD per verification (optional, default 0). Verification fee in USD.'),
+  priceUsd: z.coerce.number().min(0).optional().default(0).describe('USD per verification (optional, default 0). Pass the numeric value when user says a price in USD (e.g. 0.1 for $0.10, 1 for $1).'),
 });
 
 /**
@@ -52,6 +61,9 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
   session.requireAuth();
 
   const { schemaId: providedSchemaId, pricingModel, complianceAccessKeyEnabled, paymentFeeSchemaId, priceUsd } = args;
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[DEBUG] setupPricing received priceUsd:', priceUsd, typeof priceUsd);
+  }
   
   const schemaId = providedSchemaId || session.get('schemaId');
   if (!schemaId) {
@@ -66,7 +78,8 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
     throw new Error('Missing authentication tokens. Please authenticate first.');
   }
 
-  // Payment API: same endpoint accepts init (schemaId only) or store (all four). Do not send priceUsd or default paymentFeeSchemaId.
+  // Payment API: same endpoint accepts init (schemaId only) or store (schemaId, paymentFeeSchemaId?, pricingModel?, complianceAccessKeyEnabled?).
+  // The API does NOT accept priceUsd (returns error if sent). Price is set on-chain only (signer /set-price or dashboard). We use priceUsd only for setPriceUrl and nextSteps.
   const paymentApiUrl = environment === 'production'
     ? 'https://api.mocachain.org'
     : 'https://api.staging.mocachain.org';
@@ -79,12 +92,12 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
   if (paymentFeeSchemaId != null && paymentFeeSchemaId !== '') {
     pricingData.paymentFeeSchemaId = paymentFeeSchemaId;
   }
+  // Do not add priceUsd to pricingData — API rejects unknown fields. Use priceNum only for setPriceUrl and nextSteps.
+  const priceNum = typeof priceUsd === 'number' && priceUsd > 0 ? priceUsd : (priceUsd ?? 0);
+  const hasPositivePrice = typeof priceNum === 'number' && priceNum > 0;
 
   console.log('[DEBUG] Setting up pricing on:', paymentApiUrl);
   console.log('[DEBUG] Pricing data:', JSON.stringify(pricingData, null, 2));
-  if ((priceUsd ?? 0) !== 0) {
-    console.log('[DEBUG] priceUsd is for display only; payment API does not accept it yet.');
-  }
 
   try {
     const headers = generatePaymentHeaders(pricingData as any, dashboardToken, issuerId);
@@ -102,23 +115,89 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
       throw new Error(`API returned error: ${response.data?.msg || response.statusText}`);
     }
 
+    // When price is a positive number, include setPriceUrl so MCP/user can open it for the on-chain step
+    const signerBase = process.env.CREDENTIAL_SIGNER_URL?.replace(/\/$/, '') || '';
+    const setPriceUrl =
+      hasPositivePrice && signerBase
+        ? `${signerBase}/set-price?price=${priceNum}&schemaId=${encodeURIComponent(schemaId)}`
+        : undefined;
+
+    const nextSteps: string[] = [
+      'Create verification programs with credential_create_verification_programs',
+    ];
+    if (hasPositivePrice) {
+      if (setPriceUrl) {
+        nextSteps.unshift(
+          `Set the verification price on-chain: open ${setPriceUrl} in your browser, connect your wallet on MOCA, then confirm the transaction. Alternatively use Credential Dashboard → Pricing → Define schema price.`,
+        );
+      } else {
+        nextSteps.unshift(
+          `Set the verification price on-chain: Credential Dashboard → Pricing → Define schema price → select schema ${schemaId} → enter ${priceNum} USD8 → Confirm (sign with wallet). The API stores schema, pricing model, and CAK; the numeric price is stored on-chain only.`,
+        );
+      }
+    }
+    const successMessage =
+      hasPositivePrice && setPriceUrl
+        ? `Pricing configured. To set ${priceNum} USD on-chain, tell the user to open this link and confirm in their wallet: ${setPriceUrl}`
+        : hasPositivePrice
+          ? `Pricing configured. To set ${priceNum} USD on-chain, direct the user to Credential Dashboard → Pricing → Define schema price.`
+          : 'Pricing configured successfully';
     return {
       success: true,
-      message: 'Pricing configured successfully',
+      message: successMessage,
       schemaId,
       pricingModel,
       complianceAccessKeyEnabled,
-      priceUsd: priceUsd ?? 0,
+      priceUsd: priceNum,
       paymentFeeSchemaId: paymentFeeSchemaId ?? undefined,
-      nextSteps: [
-        'Create verification programs with credential_create_verification_programs',
-      ],
+      setPriceUrl,
+      nextSteps,
     };
   } catch (error: any) {
+    const status = error.response?.status;
+    const msg = error.response?.data?.message ?? error.response?.data?.msg ?? error.message;
+
+    if (status === 409 && typeof msg === 'string' && /already exists|already configured/i.test(msg)) {
+      const signerBase = process.env.CREDENTIAL_SIGNER_URL?.replace(/\/$/, '') || '';
+      const setPriceUrl =
+        hasPositivePrice && signerBase
+          ? `${signerBase}/set-price?price=${priceNum}&schemaId=${encodeURIComponent(schemaId)}`
+          : undefined;
+      const nextSteps: string[] = [
+        'Create verification programs with credential_create_verification_programs',
+      ];
+      if (hasPositivePrice) {
+        if (setPriceUrl) {
+          nextSteps.unshift(
+            `Set the verification price on-chain: open ${setPriceUrl} in your browser, connect your wallet on MOCA, then confirm the transaction.`,
+          );
+        } else {
+          nextSteps.unshift(
+            `Set the verification price on-chain: Credential Dashboard → Pricing → Define schema price → select schema ${schemaId} → enter ${priceNum} USD8 → Confirm (sign with wallet).`,
+          );
+        }
+      }
+      const alreadyMsg =
+        hasPositivePrice && setPriceUrl
+          ? `Pricing was already configured. To set ${priceNum} USD on-chain, tell the user to open: ${setPriceUrl}`
+          : 'Pricing was already configured for this schema; no change needed.';
+      return {
+        success: true,
+        message: alreadyMsg,
+        schemaId,
+        pricingModel,
+        complianceAccessKeyEnabled,
+        priceUsd: priceNum,
+        paymentFeeSchemaId: paymentFeeSchemaId ?? undefined,
+        setPriceUrl,
+        nextSteps,
+      };
+    }
+
     console.error('[DEBUG] Pricing setup error:', error.message);
     if (error.response?.data) {
       console.error('[DEBUG] Error response:', JSON.stringify(error.response.data, null, 2));
     }
-    throw new Error(`Pricing setup failed: ${error.response?.data?.msg || error.message}`);
+    throw new Error(`Pricing setup failed: ${msg}`);
   }
 }

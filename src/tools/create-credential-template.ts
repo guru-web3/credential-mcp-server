@@ -12,13 +12,19 @@ export const CreateCredentialTemplateArgsSchema = z.object({
   credentialName: z.string().optional().describe('Name of the credential. Filled from schema title when schemaId is provided and this is omitted.'),
   schemeType: z.string().optional().describe('Schema type identifier. Filled from schema when schemaId is provided and this is omitted.'),
   schemeTitle: z.string().optional().describe('Schema title. Filled from schema when schemaId is provided and this is omitted.'),
-  expirationDuration: z.number().default(365).describe('Expiration duration in days'),
-  issueMax: z.number().nullable().default(null).describe('Maximum number of credentials to issue (null for unlimited)'),
+  expirationDuration: z.coerce.number().min(1).default(365).describe('Expiration duration in days (min 1)'),
+  issueMax: z.union([z.coerce.number(), z.null()]).optional().default(null).describe('Maximum number of credentials to issue (null for unlimited)'),
   accessibleStartAt: z.string().default('').describe('Start date for accessibility (ISO format or empty)'),
   accessibleEndAt: z.string().default('').describe('End date for accessibility (ISO format or empty)'),
-  revokeFlag: z.number().default(0).describe('Revoke flag (0 or 1)'),
-  complianceAccessKeyEnabled: z.number().default(0).describe('Compliance access key enabled (0 or 1)'),
-});
+  revokeFlag: z.coerce.number().default(0).describe('Revoke flag (0 or 1)'),
+  complianceAccessKeyEnabled: z.coerce.number().default(0).describe('Compliance access key enabled (0 or 1)'),
+}).refine(
+  (data) => {
+    if (!data.accessibleStartAt || !data.accessibleEndAt) return true;
+    return new Date(data.accessibleEndAt) > new Date(data.accessibleStartAt);
+  },
+  { message: 'accessibleEndAt must be after accessibleStartAt when both are set', path: ['accessibleEndAt'] }
+);
 
 interface SchemeByIdResponse {
   schemeId: string;

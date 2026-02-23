@@ -23,6 +23,7 @@ import { getVerifierAppConfig, VerifierAppConfigArgsSchema } from '../tools/veri
 import { getAppSteps, AppStepsArgsSchema } from '../tools/app-steps.js';
 
 import { TOOLS_LIST } from './toolsList.js';
+import { normalizeToolArgs } from './normalizeToolArgs.js';
 
 export function createMcpServer(): { server: Server } {
   const server = new Server(
@@ -46,83 +47,84 @@ export function createMcpServer(): { server: Server } {
     if (auth) setSessionFromAuthInfo(auth);
 
     const { name, arguments: args } = request.params;
+    const normalized = normalizeToolArgs(name, (args ?? {}) as Record<string, unknown>);
 
     try {
       let result: unknown;
 
       switch (name) {
         case 'credential_authenticate': {
-          const validated = AuthenticateArgsSchema.parse(args ?? {});
+          const validated = AuthenticateArgsSchema.parse(normalized);
           result = await authenticate(validated);
           break;
         }
         case 'credential_get_login_challenge': {
-          const validated = GetLoginChallengeArgsSchema.parse(args ?? {});
+          const validated = GetLoginChallengeArgsSchema.parse(normalized);
           result = await getLoginChallenge(validated);
           break;
         }
         case 'credential_create_schema': {
-          const validated = CreateSchemaArgsSchema.parse(args);
+          const validated = CreateSchemaArgsSchema.parse(normalized);
           result = await createSchema(validated);
           break;
         }
         case 'credential_verify_schema_published': {
-          const validated = VerifySchemaPublishedArgsSchema.parse(args);
+          const validated = VerifySchemaPublishedArgsSchema.parse(normalized);
           result = await verifySchemaPublished(validated);
           break;
         }
         case 'credential_create_program': {
-          const validated = CreateCredentialTemplateArgsSchema.parse(args);
+          const validated = CreateCredentialTemplateArgsSchema.parse(normalized);
           result = await createCredentialTemplate(validated);
           break;
         }
         case 'credential_setup_pricing': {
-          const validated = SetupPricingArgsSchema.parse(args);
+          const validated = SetupPricingArgsSchema.parse(normalized);
           result = await setupPricing(validated);
           break;
         }
         case 'credential_create_verification_programs': {
-          const validated = CreateProgramsArgsSchema.parse(args);
+          const validated = CreateProgramsArgsSchema.parse(normalized);
           result = await createVerificationPrograms(validated);
           break;
         }
         case 'credential_list_templates': {
-          const validated = ListCredentialTemplatesArgsSchema.parse(args ?? {});
+          const validated = ListCredentialTemplatesArgsSchema.parse(normalized);
           result = await listCredentialTemplates(validated);
           break;
         }
         case 'credential_list_programs': {
-          const validated = ListVerificationProgramsArgsSchema.parse(args ?? {});
+          const validated = ListVerificationProgramsArgsSchema.parse(normalized);
           result = await listVerificationPrograms(validated);
           break;
         }
         case 'credential_docs': {
-          const validated = CredentialDocsArgsSchema.parse(args ?? {});
+          const validated = CredentialDocsArgsSchema.parse(normalized);
           result = await credentialDocs(validated);
           break;
         }
         case 'credential_list_schemas': {
-          const validated = ListSchemasArgsSchema.parse(args ?? {});
+          const validated = ListSchemasArgsSchema.parse(normalized);
           result = await listSchemas(validated);
           break;
         }
         case 'credential_template_info': {
-          const validated = TemplateInfoArgsSchema.parse(args ?? {});
+          const validated = TemplateInfoArgsSchema.parse(normalized);
           result = await getTemplateInfo(validated);
           break;
         }
         case 'credential_issuance_app_config': {
-          const validated = IssuanceAppConfigArgsSchema.parse(args ?? {});
+          const validated = IssuanceAppConfigArgsSchema.parse(normalized);
           result = await getIssuanceAppConfig(validated);
           break;
         }
         case 'credential_verifier_app_config': {
-          const validated = VerifierAppConfigArgsSchema.parse(args ?? {});
+          const validated = VerifierAppConfigArgsSchema.parse(normalized);
           result = await getVerifierAppConfig(validated);
           break;
         }
         case 'credential_app_steps': {
-          const validated = AppStepsArgsSchema.parse(args ?? {});
+          const validated = AppStepsArgsSchema.parse(normalized);
           result = await getAppSteps(validated);
           break;
         }

@@ -7,7 +7,15 @@ import { z } from 'zod';
 
 export const CredentialDocsArgsSchema = z.object({
   flow: z
-    .enum(['issuance', 'verification', 'both'])
+    .union([
+      z.enum(['issuance', 'verification', 'both']),
+      z.string().transform((s) => {
+        const v = String(s).toLowerCase();
+        if (v.includes('verif')) return 'verification';
+        if (v.includes('issu')) return 'issuance';
+        return 'both';
+      }),
+    ])
     .default('both')
     .describe('Which flow to document: issuance, verification, or both'),
 });

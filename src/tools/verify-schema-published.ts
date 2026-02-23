@@ -3,7 +3,7 @@ import { apiRequest } from '../utils/api.js';
 import { session } from '../session.js';
 import axios from 'axios';
 
-const VerifySchemaPublishedArgsSchema = z.object({
+export const VerifySchemaPublishedArgsSchema = z.object({
   schemaId: z.string().optional().describe('The schema ID to verify (uses current session schemaId if not provided)'),
 });
 
@@ -116,5 +116,3 @@ export async function verifySchemaPublished(args: z.infer<typeof VerifySchemaPub
     throw new Error(`Schema verification failed: ${error.message}`);
   }
 }
-
-export { VerifySchemaPublishedArgsSchema };

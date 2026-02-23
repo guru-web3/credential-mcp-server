@@ -3,17 +3,29 @@ import CryptoJS from 'crypto-js';
 import { session } from '../session.js';
 import { apiRequest } from '../utils/api.js';
 
+const OPERATORS = ['>', '>=', '<', '<=', '=', '!='] as const;
+const operatorEnum = z.enum(OPERATORS);
+
 export const CreateProgramsArgsSchema = z.object({
   schemaId: z.string().optional().describe('Schema ID (uses last created schema if not provided)'),
-  deploy: z.boolean().optional().default(true).describe('If true (default), deploy each program after create (status DEPLOYING_W) so it becomes active.'),
+  deploy: z.coerce.boolean().optional().default(true).describe('If true (default), deploy each program after create (status DEPLOYING_W) so it becomes active.'),
   programs: z.array(z.object({
     programName: z.string().describe('Unique program name (e.g., nft_holder_standard)'),
-    conditions: z.array(z.object({
-      attribute: z.string().describe('Schema attribute to verify'),
-      operator: z.enum(['>', '>=', '<', '<=', '=', '!=']).describe('Comparison operator'),
-      value: z.union([z.string(), z.number(), z.boolean()]).describe('Value to compare against'),
-    })).describe('Verification conditions (all must be true)'),
-  })).describe('List of verification programs to create'),
+    conditions: z
+      .array(
+        z.object({
+          attribute: z.string().describe('Schema attribute to verify'),
+          operator: z
+            .union([operatorEnum, z.string().transform((s) => (OPERATORS.includes(String(s).trim() as typeof OPERATORS[number]) ? String(s).trim() as typeof OPERATORS[number] : '='))])
+            .describe('Comparison operator'),
+          value: z.union([z.string(), z.coerce.number(), z.coerce.boolean()]).describe('Value to compare against'),
+        })
+      )
+      .min(1, 'At least one condition is required per program')
+      .describe('Verification conditions (all must be true)'),
+  }))
+  .min(1, 'At least one program is required')
+  .describe('List of verification programs to create'),
 });
 
 /**

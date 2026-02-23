@@ -6,7 +6,12 @@
 import { z } from 'zod';
 
 export const TemplateInfoArgsSchema = z.object({
-  appType: z.enum(['issuance', 'verifier']).describe('issuance or verifier template'),
+  appType: z
+    .union([
+      z.enum(['issuance', 'verifier']),
+      z.string().transform((s) => (String(s).toLowerCase().includes('verif') ? 'verifier' : 'issuance')),
+    ])
+    .describe('issuance or verifier template'),
   branch: z.string().optional().describe('Optional branch (default: mcp/template for issuance, main for verifier)'),
 });
 

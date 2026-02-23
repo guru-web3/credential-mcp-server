@@ -1,0 +1,1033 @@
+{
+  "source": "/Users/guru/Downloads/atm-exporter.xlsx",
+  "generatedAt": "2026-02-23T10:35:55.807Z",
+  "scenarioCount": 114,
+  "scenarios": [
+    {
+      "key": "MOCA-T2053",
+      "name": "[Dashboard] [Wallet login] - The user login into dashboard with EOA wallet successful - Metamask",
+      "status": "Draft",
+      "precondition": "1. installed Metamask wallet extension",
+      "objective": "The user login into dashboard successful via wallet",
+      "folder": "/Credential Dashboard/Wallet Login",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T2081",
+      "name": "[Dashboard] [Schema] - User creates a new schema with multiple attributes successfully",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "the user creates a new schema with multiple subject successfully",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T2082",
+      "name": "[Dashboard] [Schema] - the system shows error when empty require field",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page\nhttps://developers.staging.air3.com/dashboard/issuer/schemas",
+      "objective": "the system shows error when empty require field",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2084",
+      "name": "[Dashboard] [Schema] - The user edit/update a schema successfully",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page \nhttps://developers.staging.air3.com/dashboard/issuer/schemas\n2. Already created a schema",
+      "objective": "The user update a schema successfully",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2085",
+      "name": "[Dashboard] [Schema] - The system shows error when updating duplicate version",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page  \nhttps://developers.staging.air3.com/dashboard/issuer/credentials\n2. Already created a schema",
+      "objective": "The user update a schema successfully",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Low"
+    },
+    {
+      "key": "MOCA-T2086",
+      "name": "[Dashboard] [Schema] - the system shows error when using not in alphanumeric characters in Schema Type Field",
+      "status": "Draft",
+      "precondition": "1. Already logged in",
+      "objective": "use not in alphanumeric characters in Schema Type Field",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Low"
+    },
+    {
+      "key": "MOCA-T2087",
+      "name": "[Dashboard] [Schema] - the system Only alphanumeric characters, dash (-) and underscore(_) allowed in Attribute properties name field",
+      "status": "Draft",
+      "precondition": "1. Already logged in",
+      "objective": "use not in alphanumeric characters in Schema Type Field",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Low"
+    },
+    {
+      "key": "MOCA-T2088",
+      "name": "[Dashboard] [IssuerProgram] - Creates a new credential Issuer Programsuccessful",
+      "status": "Draft",
+      "precondition": "1. Already logged into the dashboard page\n2. use existing schema and pricing",
+      "objective": "the user creates a new credential successful",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T2089",
+      "name": "[Dashboard] [IssuerProgram] -  the system shows error when selecting end date less than start date",
+      "status": "Draft",
+      "precondition": "1. Already logged into the dashboard page\n2. use existing schema",
+      "objective": "the system shows error when selecting end date less than start date",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2090",
+      "name": "[Dashboard] [IssuerProgram] - Revokes a credential successful",
+      "status": "Draft",
+      "precondition": "1. Already logged into the dashboard page\n2. use existing credential",
+      "objective": "the user revokes a credential successful",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T2091",
+      "name": "[Dashboard] [IssuerProgram] - the system shows error when making empty require field",
+      "status": "Draft",
+      "precondition": "1. Already logged into the dashboard page\n2. use existing schema",
+      "objective": "the system shows error when making empty require field",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2092",
+      "name": "[Dashboard] [VerifierProgram] - Create a verifier program successful",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page",
+      "objective": "The user create a program successful",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2093",
+      "name": "[Dashboard] [VerifierProgram] - Create a program successful with multiple not required schema",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page\n2. use schema multiple attribute : string + integer (not set required on \nschema )",
+      "objective": "The user create a program successful",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T2094",
+      "name": "[Dashboard][General] - Verify Domain Format with Wildcard Support",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/General",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T2095",
+      "name": "[Dashboard] [VerifierProgram] - Modify a draft program successful",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page",
+      "objective": "The user modify a draft program successful",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2098",
+      "name": "[Dashboard] [IssuerRecord] - Show total credential data of issuer correctly",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage record",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2099",
+      "name": "[Dashboard] [Schema] - the user search schema by name, id, schema type successful",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Low"
+    },
+    {
+      "key": "MOCA-T2100",
+      "name": "[Dashboard] [IssuerProgram] - the user search Issued credentials by name, id successful",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "Low"
+    },
+    {
+      "key": "MOCA-T2101",
+      "name": "[Dashboard] [IssuerProgram] - the user check credential issued time by datetime successful",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "Low"
+    },
+    {
+      "key": "MOCA-T2102",
+      "name": "[Dashboard] [IssuerProgram] - the user searches holder id, credential name, id on dashboard page",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "Low"
+    },
+    {
+      "key": "MOCA-T2104",
+      "name": "[Dashboard] [VerifierProgram] - The system shows error when modifying with empty require field",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page",
+      "objective": "The user modify a draft program successful",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2105",
+      "name": "[Dashboard] [VerifierProgram] - The system shows error when leaving empty require field",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page",
+      "objective": "The user modify a draft program successful",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2106",
+      "name": "[Dashboard] [VerifierProgram] - The user can search schema in selection schema component",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page",
+      "objective": "The user modify a draft program successful",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Low"
+    },
+    {
+      "key": "MOCA-T2107",
+      "name": "[Dashboard] [VerifierProgram] - The system shows error when leaving empty query",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2115",
+      "name": "[Dashboard] [Schema] - The user creates a new schema successfully with attribute properties - string",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page \nhttps://developers.staging.air3.com/dashboard/issuer/schemas",
+      "objective": "The user creates a new schema successfully",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2116",
+      "name": "[Dashboard] [Schema] - The user creates a new schema successfully with attribute properties - number",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page \nhttps://developers.staging.air3.com/dashboard/issuer/schemas",
+      "objective": "The user creates a new schema successfully",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2117",
+      "name": "[Dashboard] [Schema] - The user creates a new schema successfully with attribute properties - boolean",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page \nhttps://developers.staging.air3.com/dashboard/issuer/schemas",
+      "objective": "The user creates a new schema successfully",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2118",
+      "name": "[Dashboard] [Schema] - the user creates a new schema successfully with attribute properties - integer",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page \nhttps://developers.staging.air3.com/dashboard/issuer/schemas",
+      "objective": "The user creates a new schema successfully",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2119",
+      "name": "[Dashboard] [VerifierProgram] - Delete a draft program successful",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page and have program draft created",
+      "objective": "The user modify a draft program successful",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2120",
+      "name": "[Dashboard] [VerifierProgram] - Add duplicate program successful",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page and have program deployed on chain",
+      "objective": "The user modify a draft program successful",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2121",
+      "name": "[Dashboard] [VerifierProgram] - Deploy a program successful",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page\n2.User have enough balance of moca token on payment wallet",
+      "objective": "The user create a program successful",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T2340",
+      "name": "[Dashboard] [Wallet login] - The user login into dashboard with EOA wallet successful - OKX",
+      "status": "Draft",
+      "precondition": "1. installed OKX wallet extension",
+      "objective": "The user login into dashboard successful via wallet",
+      "folder": "/Credential Dashboard/Wallet Login",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2342",
+      "name": "[Dashboard] [VerifyRecord] - the system shows total credential data of verifier correctly",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Record",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2343",
+      "name": "[Dashboard] [VerifierProgram] - The system shows error when operator and attribute value in not input",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2344",
+      "name": "[Dashboard][General] - Modify/Update Allowed Domains successfully",
+      "status": "Draft",
+      "precondition": "Already added WL domain existed",
+      "objective": "",
+      "folder": "/Credential Dashboard/General",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2446",
+      "name": "[Dashboard] [Schema] - The user creates a new schema successfully with required attribute properties",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page \nhttps://developers.staging.air3.com/dashboard/issuer/schemas",
+      "objective": "The user creates a new schema successfully",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T2450",
+      "name": "[Dashboard] [VerifierProgram] - Create a program successful with multiple required schema",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page\n2. use schema multiple attribute : bool + number ( Click all required on \nschema )",
+      "objective": "The user create a program successful",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2451",
+      "name": "[Dashboard] [Schema] - The user creates a new schema successfully with attribute properties - object",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page \nhttps://developers.staging.air3.com/dashboard/issuer/schemas",
+      "objective": "The user creates a new schema successfully",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2558",
+      "name": "[Dashboard][General] - Verify Dashboard URLs for page navigation",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/General",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2559",
+      "name": "[Dashboard][General] - Verify navigation menu hierarchy and menu page leading",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/General",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2560",
+      "name": "[Dashboard] [Wallet login] -  Login user can change connected wallet successfully",
+      "status": "Draft",
+      "precondition": "installed EOA wallet extension",
+      "objective": "",
+      "folder": "/Credential Dashboard/Wallet Login",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T2633",
+      "name": "[Dashboard] [Wallet login] - Verify that /partner/login is called instead of separate issuer and verifier login APIs",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Wallet Login",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2634",
+      "name": "[Dashboard][General] - Verify add domain maximum limit should be 3",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/General",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T2635",
+      "name": "[Dashboard][General] - Same domains cannot be added",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "When a domain (or its wildcard) is already registered by Partner A, it’s \nconsidered occupied. If Partner B tries to add the same or overlapping \ndomain, the system rejects it.\n\nThis ensures:\n\n    * One-to-one mapping between domain and partner, avoiding conflicts\n      when the domain is allowCrossPartnerAuthentication = true\n\n    * Security and access control, preventing misuse or traffic confusion\n      across partners",
+      "folder": "/Credential Dashboard/General",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T2641",
+      "name": "[Dashboard][General] - Add JWKS URL successfully",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/General",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T2642",
+      "name": "[Dashboard] [VerifierProgram] - Program creation failed due to insufficient funds in fee wallet",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page",
+      "objective": "The user create a program successful",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3087",
+      "name": "[Dashboard] [Wallet login] -Default wallet model before connect wallet",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Wallet Login",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3088",
+      "name": "[Dashboard] [Wallet login] -Swich chain if default chain is not moca chain",
+      "status": "Draft",
+      "precondition": "Switch chain on wallet which is not Moca chain",
+      "objective": "",
+      "folder": "/Credential Dashboard/Wallet Login",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3089",
+      "name": "[Dashboard] [Schema] - Setup issuer account when first time onboarding",
+      "status": "Draft",
+      "precondition": "Dashboard user who is not set up payment account (first time on board)",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3090",
+      "name": "[Dashboard] [IssuerProgram] -  Setup issuer account when first time onboarding with no enough native moca token",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3091",
+      "name": "[Dashboard] [Schema] - Display ready for price set up toast after user creates a new schema",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3092",
+      "name": "[Dashboard] [Schema] - User able switch My schemas/Other schemas to filter schemas",
+      "status": "Draft",
+      "precondition": "1. Already logged into dashboard page \nhttps://test-unified-dashboard.zk.me/schema\n2. Already created a schema",
+      "objective": "figma\n<https://www.figma.com/design/5HF3mp3poAjYkYZaFVeJ1C/bp-zkMe-%3C%3E-AIR-Kit?node-id=6119-18415&t=tRokwKUVg2YcwAYq-4>",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3093",
+      "name": "[Dashboard] [Schema] - Click Add pricing to lead to add schema price",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Schema",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3094",
+      "name": "[Dashboard] [Pricing] - Set up schema price (all attempts) successully",
+      "status": "Draft",
+      "precondition": "After already create a shcema",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Pricing",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3099",
+      "name": "[Dashboard] [Pricing] - Set up schema price (successfully verication only) successully",
+      "status": "Draft",
+      "precondition": "After already create a shcema",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Pricing",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3100",
+      "name": "[Dashboard] [Pricing] - Search price by schema title/id",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Pricing",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3101",
+      "name": "[Dashboard] [Pricing] - Add exsiting schema",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Pricing",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3102",
+      "name": "[Dashboard] [Pricing] - Error handle - Can Not create duplicated pricing mode on the schema",
+      "status": "Draft",
+      "precondition": "Already have the prcing model setup for the schema",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Pricing",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3103",
+      "name": "[Dashboard] [Pricing] - Edit schema price (Price increase)",
+      "status": "Draft",
+      "precondition": "After already create a shcema",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Pricing",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3104",
+      "name": "[Dashboard] [Pricing] - Edit schema price (Price decrease)",
+      "status": "Draft",
+      "precondition": "After already create a shcema",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Pricing",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3106",
+      "name": "[Dashboard] [IssuerProgram] - Check single price modle during create issue program",
+      "status": "Draft",
+      "precondition": "1. Already logged into the dashboard page\n2. use existing schema",
+      "objective": "the user creates a new credential successful",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3107",
+      "name": "[Dashboard] [IssuerProgram] - Check double price modle during create issue program",
+      "status": "Draft",
+      "precondition": "1. Already logged into the dashboard page\n2. use existing schema",
+      "objective": "the user creates a new credential successful",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3108",
+      "name": "[Dashboard][Payout] - Total Earnings",
+      "status": "Draft",
+      "precondition": "User already earn amount from veifier",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Payout",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3109",
+      "name": "[Dashboard][Payout] - Available for Withdrawal",
+      "status": "Draft",
+      "precondition": "User already earn amount from veifier",
+      "objective": "* Definition: The real-time amount currently remaining in the wallet\n      that has not been withdrawn and is available to be claimed.\n\n    * Nature: This represents the current balance status.\n\n    * Logic:\n\n          o It decreases when withdrawals are made.\n\n          o Formula: Total Earnings - Total Amount Already Withdrawn = \n            Available for Withdrawal.\n\n          o If a user clicks \"Withdraw\" and the transaction is successful,\n            this figure will be deducted by the corresponding amount, but \n            Total Earnings will remain unchanged.",
+      "folder": "/Credential Dashboard/Issuer Payout",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3110",
+      "name": "[Dashboard][Payout] - Verification records",
+      "status": "Draft",
+      "precondition": "User already earn amount from veifier",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Payout",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3111",
+      "name": "[Dashboard][Payout] - Withdrawal records",
+      "status": "Draft",
+      "precondition": "User already earn amount from veifier",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Payout",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3112",
+      "name": "[Dashboard][Payout] - Claim button should be disable if the amount is zero (besides Available for Withdrawal)",
+      "status": "Draft",
+      "precondition": "User already earn amount from veifier",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Payout",
+      "priority": "Low"
+    },
+    {
+      "key": "MOCA-T3113",
+      "name": "[Dashboard] [VerifierProgram] - Setup verifier account when first time onboarding",
+      "status": "Draft",
+      "precondition": "Dashboard user time land on verify tab",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3114",
+      "name": "[Dashboard] [VerifierProgram] - Setup verifier account when first time onboarding with no enough native moca token",
+      "status": "Draft",
+      "precondition": "Dashboard user whois not set up payment account",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3116",
+      "name": "[Dashboard] [Payment] - Deposit USD8 to payment control wallet",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Payment",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3117",
+      "name": "[Dashboard] [Payment] - Withdraw USD8 to payment controller wallet",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Payment",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3118",
+      "name": "[Dashboard] [Payment] - Transaction details - payment",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Payment",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3119",
+      "name": "[Dashboard] [Payment] - Transaction details - deposit",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Payment",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3120",
+      "name": "[Dashboard] [Payment] - Transaction details - withdraw",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Payment",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3121",
+      "name": "[Dashboard] [VerifierProgram] - Selet pricing model when creae a verify program",
+      "status": "Draft",
+      "precondition": "Dashboard user time land on verify tab",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3122",
+      "name": "[Dashboard] [VerifierProgram] - Select pricing model schema list",
+      "status": "Draft",
+      "precondition": "Dashboard user time land on verify tab",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3123",
+      "name": "[Dashboard] [VerifierProgram] - Selet pricing model schema list - empty list",
+      "status": "Draft",
+      "precondition": "User is not setup schema pricing",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3124",
+      "name": "[Dashboard] [VerifierProgram] - Error handle when creating verifier program - insufficient balance",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "figma\nhttps://www.figma.com/design/5HF3mp3poAjYkYZaFVeJ1C/bp-zkMe-%3C%3E-AIR-Kit?node-id=9082-58821&t=tRokwKUVg2YcwAYq-4",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3125",
+      "name": "[Dashboard] [VerifierProgram] -  Error handle when creating verifier program - Running low on payment balance",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3169",
+      "name": "[Dashboard][IssuerGating] Verify Default Tier (Tier 5)",
+      "status": "Draft",
+      "precondition": "New Issuer account with sufficient wallet balance but 0 staked $MOCA",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3170",
+      "name": "[Dashboard][IssuerGating] Verify Upgrade to Tier 4",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3171",
+      "name": "[Dashboard][IssuerGating] Verify Boundary Value (Tier 3)",
+      "status": "Draft",
+      "precondition": "Issuer is currently Tier 2",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3172",
+      "name": "[Dashboard][IssuerGating] Issue to New User (Consumes Cap)",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3173",
+      "name": "[Dashboard][IssuerGating] Issue to Existing User This Month (No Consumption)",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3174",
+      "name": "[Dashboard][IssuerGating] Re-issue Same Credential (No Consumption)",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3175",
+      "name": "[Dashboard][IssuerGating] Issue to Historical User (No Consumption)",
+      "status": "Draft",
+      "precondition": "User already issue credential in previous month",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3176",
+      "name": "[Dashboard][IssuerGating] Block Issuance at Cap Limit",
+      "status": "Draft",
+      "precondition": "Issuer is Tier 5; Monthly usage: 100/100.",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3177",
+      "name": "[Dashboard][IssuerGating] Allow Issuance to Existing User at Cap",
+      "status": "Draft",
+      "precondition": "Issuer is Tier 1; Monthly usage: 100/100 (Full)",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3178",
+      "name": "[Dashboard][IssuerGating] Unlock cap via Staking Upgrade",
+      "status": "Draft",
+      "precondition": "Issuer is Tier 1; Usage: 100/100 (Blocked)",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3179",
+      "name": "[Dashboard][IssuerGating] Initiate Unstake (Immediate Downgrade)",
+      "status": "Draft",
+      "precondition": "Issuer is Tier 3 (100,000 MOCA); Monthly usage: 5000",
+      "objective": "Figma\nhttps://www.figma.com/design/5HF3mp3poAjYkYZaFVeJ1C/bp-zkMe-%3C%3E-AIR-Kit?node-id=6286-5560&t=tRokwKUVg2YcwAYq-4",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3180",
+      "name": "[Dashboard][IssuerGating] Withdraw After Cooldown",
+      "status": "Draft",
+      "precondition": "Issuer initiated unstake 49 hours ago.",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3181",
+      "name": "[Dashboard][IssuerGating] Full Unstake moca token",
+      "status": "Draft",
+      "precondition": "Issuer is Tier 2.",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3182",
+      "name": "[Dashboard][IssuerGating] Verification While Issuance Paused",
+      "status": "Draft",
+      "precondition": "Issuer is Tier 1; Usage 100/100 (Full/Paused).",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3183",
+      "name": "[Dashboard][IssuerGating] Verification Does Not Affect Cap",
+      "status": "Draft",
+      "precondition": "Issuer is Tier 1; Usage 50/100.",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Low"
+    },
+    {
+      "key": "MOCA-T3184",
+      "name": "[Dashboard][IssuerGating] Monthly Cap Reset",
+      "status": "Draft",
+      "precondition": "EX : Date: Feb 28nd 2026, 23:59; Usage: 90/100.",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage quota",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3223",
+      "name": "[Dashboard] [CAK] - Set the schema pricing successfully - All attempts + CAK supported",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3224",
+      "name": "[Dashboard] [CAK] - Set the schema pricing successfully - All attempts + CAK not supported",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3227",
+      "name": "[VC] [CAK] - Verification Flow(cak=on) - Verify successfully which issue credential (cak=on)",
+      "status": "Draft",
+      "precondition": "User already set a Verification program which cak is on",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3228",
+      "name": "[VC] [CAK] - Verification Flow(cak=off) - Verify successfully either issue credential (cak=on and cak=off)",
+      "status": "Draft",
+      "precondition": "User already set a Verification program which cak is off",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3243",
+      "name": "[Dashboard][General] - Add  Callback URL successfully",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/General",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3244",
+      "name": "[Dashboard] [IssuerProgram] - Check program details and show correct content",
+      "status": "Draft",
+      "precondition": "1. Already logged into the dashboard page\n2. use existing schema and pricing",
+      "objective": "the user creates a new credential successful",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3245",
+      "name": "[Dashboard] [IssuerRecord] - Show correct issue credential usage record list",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Usage record",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3246",
+      "name": "[Dashboard] [IssuerProgram] - Pause a credential successful",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issuer Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3247",
+      "name": "[Dashboard] [VerifierProgram] - Paue a active program successful",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Verifier Program",
+      "priority": "High"
+    },
+    {
+      "key": "MOCA-T3248",
+      "name": "[Dashboard] [CAK] - Set the schema pricing successfully - Successful verifications only + CAK supported",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3249",
+      "name": "[Dashboard] [CAK] - Set the schema pricing successfully - Successful verifications only+ CAK not supported",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3250",
+      "name": "[Dashboard] [CAK] - Create issuer program successfully - CAK on",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3251",
+      "name": "[Dashboard] [CAK] - Create issuer program successfully - CAK off",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3252",
+      "name": "[Dashboard] [CAK] - Create Verification program successfully - CAK off",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3253",
+      "name": "[Dashboard] [CAK] - Create Verification program successfully - CAK on",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3254",
+      "name": "[VC] [CAK] - Verification Flow - Display CAK private key on devtest tool",
+      "status": "Draft",
+      "precondition": "Bypass the Verification flow which program is cak = on",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3255",
+      "name": "[VC] [CAK] - Issuance Flow - Display CAK public key on devtest tool",
+      "status": "Draft",
+      "precondition": "Bypass the issue flow which program is cak = on",
+      "objective": "",
+      "folder": "/Credential Dashboard/Compliance Access Key",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3479",
+      "name": "[Advanced][Issuer on Behalf] Enable now - Issue credentials on behalf of your users",
+      "status": "Draft",
+      "precondition": "",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issue on Behalf of Users",
+      "priority": "Normal"
+    },
+    {
+      "key": "MOCA-T3480",
+      "name": "[Advanced][Issuer on Behalf] Turn off - Issue credentials on behalf of your users",
+      "status": "Draft",
+      "precondition": "Issue credentials on behalf is enabled",
+      "objective": "",
+      "folder": "/Credential Dashboard/Issue on Behalf of Users",
+      "priority": "Normal"
+    }
+  ]
+}

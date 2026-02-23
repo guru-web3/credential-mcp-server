@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { session } from '../session.js';
 import { apiRequest } from '../utils/api.js';
 import { SchemaDataPoint } from '../types.js';
+import { alphanumericRegEx, numberOnlyReg, versionRegEx } from '../constants/regex.js';
 
 /** Generate a 21-char id for attribute (matches dashboard scripts) */
 function generateAttributeId(): string {
@@ -13,17 +14,44 @@ function generateAttributeId(): string {
   return result;
 }
 
-export const CreateSchemaArgsSchema = z.object({
-  schemaName: z.string().describe('Schema name (e.g., trading-volume-credential)'),
-  schemaType: z.string().describe('Schema type identifier (e.g., tradingVolumeCredential). Must be unique.'),
-  dataPoints: z.array(z.object({
-    name: z.string().describe('Attribute name (e.g., totalVolume)'),
-    type: z.enum(['string', 'integer', 'number', 'boolean']).describe('Data type'),
-    description: z.string().optional().describe('Attribute description (optional)'),
-  })).describe('List of data points/attributes for the credential'),
-  description: z.string().optional().describe('Schema description'),
-  version: z.string().default('1.0').describe('Schema version'),
-});
+/** Min length for schema name/title (non-empty) */
+const MIN_STRING_LENGTH = 1;
+
+export const CreateSchemaArgsSchema = z
+  .object({
+    schemaName: z
+      .string()
+      .min(MIN_STRING_LENGTH, 'Schema name (title) is required')
+      .describe('Schema name (e.g., trading-volume-credential)'),
+    schemaType: z
+      .string()
+      .min(MIN_STRING_LENGTH, 'Schema type is required')
+      .describe('Schema type identifier (e.g., tradingVolumeCredential). Must be unique. Alphanumeric only, not numbers only.'),
+    dataPoints: z
+      .array(
+        z.object({
+          name: z.string().min(1, 'Attribute name is required'),
+          type: z.enum(['string', 'integer', 'number', 'boolean']).describe('Data type'),
+          description: z.string().optional().describe('Attribute description (optional)'),
+        })
+      )
+      .min(1, 'At least one data point is required')
+      .describe('List of data points/attributes for the credential'),
+    description: z.string().optional().describe('Schema description'),
+    version: z.string().default('1.0').describe('Schema version (e.g. 1.0, 1.0.1)'),
+  })
+  .refine(
+    (data) => alphanumericRegEx.test(data.schemaType),
+    { message: 'Schema type must contain only alphanumeric characters with no spaces.', path: ['schemaType'] }
+  )
+  .refine(
+    (data) => !numberOnlyReg.test(data.schemaType),
+    { message: 'Schema type cannot consist of numbers only.', path: ['schemaType'] }
+  )
+  .refine(
+    (data) => versionRegEx.test(data.version ?? '1.0'),
+    { message: 'Version must follow standard format (e.g. 1.0, 1.0.1).', path: ['version'] }
+  );
 
 export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>) {
   session.requireAuth();

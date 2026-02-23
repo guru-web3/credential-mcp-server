@@ -99,7 +99,8 @@ app.all('/mcp', requireBearerAuth({
     res.status(401).end();
     return;
   }
-  const parsedBody = req.body;
+  // GET (e.g. SSE) often has no body; transport expects object, not undefined
+  const parsedBody = req.body != null ? req.body : {};
   const sessionId = getSessionId(req);
 
   try {
@@ -140,9 +141,19 @@ app.all('/mcp', requireBearerAuth({
       id: null,
     });
   } catch (err) {
-    console.error('[MCP] handleRequest error:', err);
+    const error = err instanceof Error ? err : new Error(String(err));
+    console.error('[MCP] handleRequest error:', error.message);
+    console.error(error.stack);
     if (!res.headersSent) {
-      res.status(500).json({ error: String((err as Error)?.message ?? err) });
+      res.status(500).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32603,
+          message: 'Internal error',
+          data: { detail: error.message },
+        },
+        id: null,
+      });
     }
   }
 });

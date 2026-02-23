@@ -9,11 +9,11 @@ import { session } from '../session.js';
 import { apiRequest } from '../utils/api.js';
 
 export const ListVerificationProgramsArgsSchema = z.object({
-  page: z.number().min(1).default(1).describe('Page number (1-based)'),
-  size: z.number().min(1).max(100).default(20).describe('Page size'),
+  page: z.coerce.number().min(1).default(1).describe('Page number (1-based)'),
+  size: z.coerce.number().min(1).max(100).default(20).describe('Page size'),
   searchStr: z.string().optional().describe('Optional search string'),
   sortField: z.string().default('uvpi.create_at').describe('Sort field'),
-  order: z.enum(['asc', 'desc']).default('desc').describe('Sort order'),
+  order: z.union([z.enum(['asc', 'desc']), z.string().transform((s) => (String(s).toLowerCase() === 'asc' ? 'asc' : 'desc'))]).default('desc').describe('Sort order'),
 });
 
 export type ListVerificationProgramsArgs = z.infer<typeof ListVerificationProgramsArgsSchema>;

@@ -7,7 +7,12 @@ import { z } from 'zod';
 import { getTemplateInfo } from './template-info.js';
 
 export const AppStepsArgsSchema = z.object({
-  appType: z.enum(['issuance', 'verifier']).describe('issuance or verifier'),
+  appType: z
+    .union([
+      z.enum(['issuance', 'verifier']),
+      z.string().transform((s) => (String(s).toLowerCase().includes('verif') ? 'verifier' : 'issuance')),
+    ])
+    .describe('issuance or verifier'),
   branch: z.string().optional().describe('Optional branch (e.g. mcp/template, sample/passport-age)'),
 });
 

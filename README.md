@@ -204,7 +204,7 @@ The AI will pick the right tools and parameters. You don’t need to know tool n
 | `credential_authenticate` | Log in with (1) private key, or (2) signed JSON from signer page (after `credential_get_login_challenge`). Required before other tools. |
 | `credential_create_schema` | Create and publish a schema (name, type, data points). |
 | `credential_verify_schema_published` | Verify a schema is published and ready for programs. |
-| `credential_setup_pricing` | Set pricing model for a schema (e.g. pay_on_success, optional price). |
+| `credential_setup_pricing` | Set pricing model for a schema (e.g. pay_on_success, optional price). API stores schema, pricing model, and CAK only; the numeric price is set **on-chain**. When `priceUsd` is a positive number (> 0), the result includes **`setPriceUrl`** — open that URL in a browser to set the price on-chain (signer app /set-price; connect wallet on MOCA and confirm). If `setPriceUrl` is absent, use Credential Dashboard → Pricing → Define schema price. |
 | `credential_create_program` | Create an issuance program (credential template) for a schema. |
 | `credential_create_verification_programs` | Create (and deploy) verification programs with conditions. |
 | `credential_list_schemas` | List your (or others’) schemas. |
@@ -245,6 +245,20 @@ Same flow for verifier: `credential_template_info` (verifier), `credential_verif
 
 ---
 
+## On-chain actions (signer app and dashboard)
+
+These require a wallet; the MCP server cannot sign transactions.
+
+| Action | Where | What |
+|--------|--------|------|
+| **Login** | Signer app (main page) | Sign a login message (no contract call). Used for MCP auth. |
+| **Set schema price** | Signer app **/set-price** or Credential Dashboard | **Signer:** Open `/set-price?price=0.1&schemaId=...` (or use the link returned by `credential_setup_pricing` when you pass `priceUsd`). Connect wallet on MOCA, confirm `createSchema(fee)` or `updateSchemaFee(schemaId, fee)`. **Dashboard:** Pricing → Define schema price → set USD8 and confirm. |
+| **Withdraw / claim fees** | Credential Dashboard only | Payout page: withdraw (verifier) or claim fees (issuer) via payments controller contract. Not exposed in the signer app. |
+
+The signer app supports **Set schema price** so you can complete the on-chain step after `credential_setup_pricing` (which only registers schema + pricing model + CAK with the API). Configure the signer with `NEXT_PUBLIC_PAYMENT_CHAIN_ID` and `NEXT_PUBLIC_PAYMENT_CONTROLLER_ADDRESS` (see `signer-app/.env.example`).
+
+---
+
 ## Development
 
 ### Build
@@ -264,6 +278,25 @@ npm run watch
 ```bash
 npm run inspector
 ```
+
+### Testing (unit + scenario)
+
+Unit tests cover auth argument validation, login message format (aligned with credential-api), and create-schema validation (aligned with credential-dashboard). Run:
+
+```bash
+npm run build
+npm run test
+```
+
+Or in one step: `npm run test:ci`.
+
+To run the scenario test runner (unit tests + optional E2E when `PRIVATE_KEY` or `E2E_PRIVATE_KEY` is set):
+
+```bash
+node scripts/run-scenario-tests.js
+```
+
+See [docs/test-scenarios.md](docs/test-scenarios.md) for Zephyr scenario mapping and prompts for manual or AI-assisted testing.
 
 ### Environment
 
@@ -339,6 +372,41 @@ With **nvm**/ **fnm**, `command` might be `/Users/guru/.nvm/versions/node/v20.10
 
 ---
 
+## Troubleshooting (HTTP / Streamable MCP)
+
+- **SSE error: Non-200 status code (500)**  
+  The client’s SSE connection to the MCP endpoint got a 500. Common causes: (1) Server threw while handling a request (check server logs for `[MCP] handleRequest error:` and the stack trace). (2) GET request with no body was passed as `undefined` — the server now normalizes to `{}`. Fix: ensure the HTTP server is running (`pnpm start:http` or `node dist/httpServer.js`), that auth (Bearer token) is valid, and that the client sends `Mcp-Session-Id` for requests after the first `initialize` POST.
+
+- **No server info found / Server not yet created, returning empty offerings**  
+  The IDE MCP client has no stored server/session yet. For HTTP transport: the client must complete the OAuth flow (or provide a valid Bearer token), then send a POST to `/mcp` with an `initialize` JSON-RPC message; the server creates a session and returns a session ID. Subsequent requests (including GET for SSE) must include the `Mcp-Session-Id` header. If the client never completes initialize, or the session is lost, you’ll see “No server info found”. Fix: (re)connect the MCP server in the IDE (e.g. add server in Cursor settings, complete OAuth or token setup, then use the server).
+
+- **Session not found (404)**  
+  The `Mcp-Session-Id` header referred to a session that no longer exists (e.g. server restarted, or session was deleted). The client should send a new `initialize` POST without a session ID to create a new session.
+
+---
+
 ## License
 
 MIT
+
+
+sample prompt 
+Prompts for manual and AI testing
+
+Schema – success:
+“Create a schema named Trading Volume with schema type TradingVolumeCredential, attributes: totalVolume (integer), platform (string), version 1.0.”
+→ Expect: credential_create_schema with valid data; schemaId returned.
+
+
+
+Schema – validation error:
+“Create a schema with title only, no schema type or version.”
+→ Expect: Refusal or validation error (missing schemaType/version/dataPoints), no successful create.
+
+
+
+List flows:
+“List my credential schemas.” / “List my verification programs.”
+→ Expect: Calls after auth return list or empty list; before auth, clear “authenticate first” message.
+
+These prompts can be copy-pasted into Cursor (or any MCP client) to regression-test the AI’s tool choice and inputs.
