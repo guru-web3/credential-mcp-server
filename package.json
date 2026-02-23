@@ -5,15 +5,17 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "credential-mcp": "./bin/credential-mcp.js"
+    "credential-mcp": "./bin/credential-mcp.js",
+    "credential-mcp-http": "./bin/credential-mcp-http.js"
   },
   "scripts": {
-    "build": "tsc && chmod +x bin/credential-mcp.js",
+    "build": "tsc && chmod +x bin/credential-mcp.js bin/credential-mcp-http.js",
     "watch": "tsc --watch",
     "prepare": "npm run build",
     "inspector": "npx @modelcontextprotocol/inspector node dist/index.js",
     "signer": "npx -y serve static -p 3747",
-    "signer:next": "cd signer-app && npm run build && npx -y serve out -p 3748"
+    "signer:next": "cd signer-app && npm run build && npx -y serve out -p 3748",
+    "start:http": "node dist/httpServer.js"
   },
   "keywords": [
     "mcp",
@@ -29,6 +31,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "axios": "^1.7.9",
+    "express": "^4.21.0",
     "axios-retry": "^4.5.0",
     "crypto-js": "^4.2.0",
     "ethers": "^6.16.0",
@@ -37,6 +40,7 @@
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
+    "@types/express": "^4.17.21",
     "@types/node": "^22.10.2",
     "typescript": "^5.7.2"
   },

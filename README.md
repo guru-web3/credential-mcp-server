@@ -58,6 +58,37 @@ Choose one way to make the server available; then others add it in **Cursor → 
 
 After adding the server, they **restart Cursor** (or reload the window), then in chat they authenticate once and use natural language (see below).
 
+### Deploy option 3: Remote HTTP server with OAuth ("Needs authentication" in Cursor)
+
+To get **standard MCP login** like Figma or Slack—Cursor shows **"Needs authentication"** and triggers a one-click OAuth flow—run the **HTTP** server and connect to it by URL.
+
+1. **Run the HTTP server** (locally or on a host with HTTPS in production):
+   ```bash
+   npm run build
+   npm run start:http
+   ```
+   Default: `http://localhost:3749`. Set `MCP_HTTP_PORT` to change the port. Set `MCP_OAUTH_BASE_URL` to your public URL (e.g. `https://your-mcp-host.com`) when deploying.
+
+2. **Optional env** (see [Environment variables](#environment-variables) below):
+   - `MCP_OAUTH_BASE_URL` – Base URL of this server (for OAuth redirects and login page). Default: `http://localhost:3749`.
+   - `MCP_OAUTH_JWT_SECRET` – Secret used to sign access tokens. Set a strong value in production.
+   - `MCP_OAUTH_REDIRECT_URIS` – Comma-separated list of allowed OAuth redirect URIs (Cursor’s callback). Defaults include `http://localhost:4939/callback` and `https://cursor.com/oauth/callback`.
+
+3. **In Cursor**: add the server as an **HTTP** MCP server so Cursor runs the OAuth flow:
+   ```json
+   {
+     "mcpServers": {
+       "animoca-credentials": {
+         "url": "http://localhost:3749/mcp",
+         "type": "http"
+       }
+     }
+   }
+   ```
+   For a deployed server, use your HTTPS URL, e.g. `"url": "https://your-mcp-host.com/mcp"`.
+
+4. **Connect**: In Cursor, click **Connect** (or **Start**) next to the server. Cursor will open a browser; sign in with your wallet on the signer page, paste the JSON, and you’re authenticated. No need to call `credential_authenticate` manually—the Bearer token is sent on every request.
+
 ---
 
 ## For someone else: use this in 3 steps
@@ -159,6 +190,9 @@ The AI will pick the right tools and parameters. You don’t need to know tool n
 | *“List my credential templates.”* | `credential_list_templates` |
 | *“List my schemas.”* | `credential_list_schemas` |
 | *“How do I issue and verify credentials in my app?”* | `credential_docs` (issuance + verification steps and links) |
+| *“I want to deploy the issuance app; which repo and branch?”* | `credential_template_info` (issuance; branch mcp/template or sample/passport-age) |
+| *“Generate .env for my issuance app and tell me how to generate the keys.”* | `credential_issuance_app_config` (after auth; returns snippet + key-generation instructions) |
+| *“Give me the steps to clone, install, and deploy the issuance template.”* | `credential_app_steps` (issuance) |
 
 ---
 
@@ -177,6 +211,25 @@ The AI will pick the right tools and parameters. You don’t need to know tool n
 | `credential_list_templates` | List issuance programs (templates) for use as credentialId. |
 | `credential_list_programs` | List verification programs for use as programId in verifyCredential. |
 | `credential_docs` | Get issuance and/or verification flow docs and links. |
+| `credential_template_info` | Get repo URL, branch, and clone command for issuance or verifier template (no auth). Default issuance branch: `mcp/template`; also `sample/passport-age`. |
+| `credential_issuance_app_config` | Generate .env snippet for issuance app from session. Includes instructions to auto-generate PARTNER_PRIVATE_KEY and public key (no manual steps). JWKS kid defaults to partner ID. |
+| `credential_verifier_app_config` | Generate .env snippet for verifier app from session. |
+| `credential_app_steps` | Get ordered steps: clone → install → generate keys + env → dev → build → deploy → set JWKS URL in dashboard. |
+
+---
+
+## Develop to deploy (issuance / verifier app)
+
+After creating schemas and programs, you can get the template repo, env config, and a checklist so the AI (or you) can clone, install, generate keys, and deploy with no manual key generation:
+
+1. **“I want to deploy the issuance app”** or **“Set me up with the sample branch.”**  
+2. AI can call `credential_template_info` (appType: `issuance`, optional branch: `mcp/template` or `sample/passport-age`) → repo URL and clone command with branch.  
+3. AI calls `credential_issuance_app_config` (after auth) → env snippet and **instructions to auto-generate** PARTNER_PRIVATE_KEY and NEXT_PUBLIC_PARTNER_PUBLIC_KEY (openssl commands); agent runs them and writes .env.local.  
+4. AI calls `credential_app_steps` (appType: `issuance`) → ordered checklist.  
+5. AI runs: clone with branch → install → paste env (with generated keys) → `pnpm dev` → optionally build and deploy.  
+6. **Post-deploy:** Set JWKS URL in the credential Partner Dashboard to `https://<your-deployed-origin>/jwks.json` (kid defaults to partner ID). Whitelist your domain.
+
+Same flow for verifier: `credential_template_info` (verifier), `credential_verifier_app_config`, `credential_app_steps` (verifier).
 
 ---
 
@@ -214,7 +267,7 @@ npm run inspector
 
 ### Environment
 
-- **MCP server:** No env vars are required for basic use. Environment (staging/production) and API URLs are set when you authenticate.
+- **MCP server:** No env vars are required for basic use (STDIO). Environment (staging/production) and API URLs are set when you authenticate. For the **HTTP server** (OAuth): `MCP_OAUTH_BASE_URL`, `MCP_OAUTH_JWT_SECRET`, `MCP_OAUTH_REDIRECT_URIS`, `MCP_HTTP_PORT`, and `CREDENTIAL_SIGNER_URL` (see [Deploy option 3](#deploy-option-3-remote-http-server-with-oauth-needs-authentication-in-cursor)).
 - **Signer URL:** To use the **deployed** Next.js signer (e.g. on Netlify) so `credential_get_login_challenge` returns a public URL, set **`CREDENTIAL_SIGNER_URL`** to your signer app URL (e.g. `https://your-signer.netlify.app`). If unset, the default is `https://credential-challenge-signer.netlify.app` (for local `npm run signer`).
 
 ---

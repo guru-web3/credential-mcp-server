@@ -18,11 +18,13 @@ export const ListCredentialTemplatesArgsSchema = z.object({
 
 export type ListCredentialTemplatesArgs = z.infer<typeof ListCredentialTemplatesArgsSchema>;
 
-interface CredentialTemplateRecord {
+export interface CredentialTemplateRecord {
   id?: string;
+  credentialId?: string;
   credentialName?: string;
   schemeType?: string;
   schemeTitle?: string;
+  schemeId?: string;
   create_at?: string;
   [key: string]: unknown;
 }
