@@ -178,6 +178,19 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
 
   const envSnippet = envLines.join('\n');
 
+  const localTesting = {
+    localHttps:
+      'Run `pnpm dev:https` in the template repo; app at https://localhost:3000. Use this JWKS URL only if your validator runs locally.',
+    tunnel:
+      'For testing with the cloud credential API: run `pnpm dev`, then in another terminal run `npx ngrok http 3000` (or cloudflared). Use the tunnel HTTPS URL for JWKS and whitelist.',
+    configureTool:
+      'Call credential_configure_issuer_jwks with origin (e.g. https://localhost:3000 or your tunnel URL) to set JWKS URL and whitelist in one step. Use probeBeforeUpdate: true so the tool checks the endpoint after the server is up.',
+    dashboardSteps:
+      'Alternatively, in the credential Partner Dashboard: Settings → General, set JWKS URL to https://<origin>/jwks.json; Settings → Domains, add the hostname.',
+    afterDeploy:
+      'When ready for production: deploy the app, then call credential_configure_issuer_jwks with the deployed origin, or in the dashboard set JWKS URL to https://<your-deployed-origin>/jwks.json and update the whitelist.',
+  };
+
   return {
     envSnippet,
     notes: KEY_GEN_INSTRUCTIONS,
@@ -188,5 +201,6 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
     appName,
     headline,
     dataPoints,
+    localTesting,
   };
 }

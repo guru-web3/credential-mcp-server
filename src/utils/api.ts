@@ -60,7 +60,7 @@ export function createApiClient(): AxiosInstance {
 }
 
 export async function apiRequest<T>(
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   data?: any,
   customHeaders?: Record<string, string>
@@ -125,5 +125,6 @@ export const apiClient = {
   get: <T>(path: string) => apiRequest<T>('GET', path),
   post: <T>(path: string, data?: any) => apiRequest<T>('POST', path, data),
   put: <T>(path: string, data?: any) => apiRequest<T>('PUT', path, data),
+  patch: <T>(path: string, data?: any) => apiRequest<T>('PATCH', path, data),
   delete: <T>(path: string) => apiRequest<T>('DELETE', path),
 };

@@ -21,6 +21,7 @@ import { getTemplateInfo, TemplateInfoArgsSchema } from '../tools/template-info.
 import { getIssuanceAppConfig, IssuanceAppConfigArgsSchema } from '../tools/issuance-app-config.js';
 import { getVerifierAppConfig, VerifierAppConfigArgsSchema } from '../tools/verifier-app-config.js';
 import { getAppSteps, AppStepsArgsSchema } from '../tools/app-steps.js';
+import { configureIssuerJwks, ConfigureIssuerJwksArgsSchema } from '../tools/configure-issuer-jwks.js';
 
 import { TOOLS_LIST } from './toolsList.js';
 import { normalizeToolArgs } from './normalizeToolArgs.js';
@@ -126,6 +127,11 @@ export function createMcpServer(): { server: Server } {
         case 'credential_app_steps': {
           const validated = AppStepsArgsSchema.parse(normalized);
           result = await getAppSteps(validated);
+          break;
+        }
+        case 'credential_configure_issuer_jwks': {
+          const validated = ConfigureIssuerJwksArgsSchema.parse(normalized);
+          result = await configureIssuerJwks(validated);
           break;
         }
         default:

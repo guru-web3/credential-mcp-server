@@ -3,18 +3,26 @@ import axios from 'axios';
 import CryptoJS from 'crypto-js';
 import { session } from '../session.js';
 
-const pricingModelEnum = z.enum(['pay_on_success', 'pay_on_issuance']).optional().default('pay_on_success');
+// API accepts only each_attempt and pay_on_success (see moca-chain-api PricingModel enum)
+const pricingModelEnum = z.enum(['each_attempt', 'pay_on_success']).optional().default('pay_on_success');
+
+function normalizePricingModel(s: string): 'each_attempt' | 'pay_on_success' {
+  const lower = String(s).toLowerCase();
+  if (lower.includes('each') || lower.includes('attempt') || lower === 'all' || lower.includes('every')) return 'each_attempt';
+  if (lower.includes('issuance')) return 'pay_on_success'; // API has no pay_on_issuance; map to pay_on_success
+  return 'pay_on_success';
+}
 
 export const SetupPricingArgsSchema = z.object({
   schemaId: z.string().optional().describe('Schema ID (uses last created schema if not provided)'),
   pricingModel: z
     .union([
       pricingModelEnum,
-      z.string().transform((s) => (String(s).toLowerCase().includes('issuance') ? 'pay_on_issuance' : 'pay_on_success')),
+      z.string().transform((s) => normalizePricingModel(s)),
     ])
     .optional()
     .default('pay_on_success')
-    .describe('Pricing model: pay_on_success (only charged for successful verifications) or pay_on_issuance'),
+    .describe('Pricing model: each_attempt = charge for every verification attempt (all verifications); pay_on_success = charge only for successful verifications'),
   complianceAccessKeyEnabled: z.coerce.boolean().optional().default(false).describe('Enable Compliance Access Key (CAK) requirement'),
   paymentFeeSchemaId: z.string().optional().describe('Payment fee schema ID (default is USD8 standard: 0x64676f3921f98b72cf26dc0ac617fcade0189ae5244fa1cd614c18fb89e1be87)'),
   priceUsd: z.coerce.number().min(0).optional().default(0).describe('USD per verification (optional, default 0). Pass the numeric value when user says a price in USD (e.g. 0.1 for $0.10, 1 for $1).'),

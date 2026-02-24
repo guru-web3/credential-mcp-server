@@ -87,12 +87,18 @@ export const TOOLS_LIST = [
   },
   {
     name: 'credential_setup_pricing',
-    description: 'Configure pricing model for a credential schema on MOCA payment API. Use pay_on_success (charge for verifications) or pay_on_issuance.',
+    description:
+      'Configure pricing for a credential schema. RULE: When the user says "all verifications", "for all", "all" (e.g. "pricing for all verifications with 0 USD"), you MUST pass pricingModel: "each_attempt". Pass pricingModel: "pay_on_success" only when the user explicitly wants successful verifications only. each_attempt = charge per attempt (all attempts); pay_on_success = charge only when verification succeeds.',
     inputSchema: {
       type: 'object' as const,
       properties: {
         schemaId: { type: 'string' as const, description: 'Schema ID (uses last created schema if not provided)' },
-        pricingModel: { type: 'string' as const, enum: ['pay_on_success', 'pay_on_issuance'], description: 'pay_on_success = charge only for successful verifications; pay_on_issuance = charge on issuance' },
+        pricingModel: {
+          type: 'string' as const,
+          enum: ['each_attempt', 'pay_on_success'],
+          description:
+            'Use "each_attempt" when user says "all verifications", "for all", "all", or 0 USD for all. Use "pay_on_success" only when user wants successful verifications only. Default is pay_on_success.',
+        },
         complianceAccessKeyEnabled: { type: 'boolean' as const, default: false, description: 'Enable Compliance Access Key (CAK) requirement' },
         paymentFeeSchemaId: { type: 'string' as const, description: 'Optional payment fee schema ID (omit to use default USD8)' },
         priceUsd: { type: 'number' as const, description: 'Optional USD per verification (default 0). Use for verification fee in USD.' },
@@ -190,19 +196,19 @@ export const TOOLS_LIST = [
   },
   {
     name: 'credential_template_info',
-    description: 'Get repo URL, branch, and clone command for the issuance or verifier template. No auth. Use before clone/develop. Default branch for issuance: mcp/template; also available: sample/passport-age.',
+    description: 'Get repo URL, branch, and clone command for the issuance or verifier template. No auth. Use before clone/develop. Default branch for issuance: mcp-template; also available: sample/passport-age.',
     inputSchema: {
       type: 'object' as const,
       properties: {
         appType: { type: 'string' as const, enum: ['issuance', 'verifier'], description: 'issuance or verifier template' },
-        branch: { type: 'string' as const, description: 'Optional branch (e.g. mcp/template, sample/passport-age)' },
+        branch: { type: 'string' as const, description: 'Optional branch (e.g. mcp-template, sample/passport-age)' },
       },
       required: ['appType'] as const,
     },
   },
   {
     name: 'credential_issuance_app_config',
-    description: 'Generate .env snippet for the issuance template from session. Requires auth. Returns instructions for auto-generating PARTNER_PRIVATE_KEY and NEXT_PUBLIC_PARTNER_PUBLIC_KEY (no manual steps). JWKS kid defaults to partner ID; set JWKS URL in dashboard after deploy.',
+    description: 'Generate .env snippet for the issuance template from session. Requires auth. Returns instructions for auto-generating PARTNER_PRIVATE_KEY and NEXT_PUBLIC_PARTNER_PUBLIC_KEY (no manual steps). Includes localTesting steps (dev:https, tunnel, credential_configure_issuer_jwks). JWKS kid defaults to partner ID.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -227,9 +233,22 @@ export const TOOLS_LIST = [
       type: 'object' as const,
       properties: {
         appType: { type: 'string' as const, enum: ['issuance', 'verifier'], description: 'issuance or verifier' },
-        branch: { type: 'string' as const, description: 'Optional branch (e.g. mcp/template, sample/passport-age)' },
+        branch: { type: 'string' as const, description: 'Optional branch (e.g. mcp-template, sample/passport-age)' },
       },
       required: ['appType'] as const,
+    },
+  },
+  {
+    name: 'credential_configure_issuer_jwks',
+    description: 'Set JWKS URL and whitelist domain in the credential dashboard from a single origin. Optionally probe the JWKS endpoint first (use after spinning up the issuance server or tunnel). Requires auth.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        origin: { type: 'string' as const, description: 'Base URL of the issuance app (e.g. https://localhost:3000 or https://abc.ngrok.io). No trailing slash.' },
+        probeBeforeUpdate: { type: 'boolean' as const, description: 'If true, GET the JWKS URL before updating; if not reachable, return error so user can start server and retry. Default true.' },
+        replaceDomains: { type: 'boolean' as const, description: 'If true, set allowed domains to only the new hostname; if false, merge into existing (max 3). Default false.' },
+      },
+      required: ['origin'] as const,
     },
   },
 ];

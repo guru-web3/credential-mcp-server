@@ -122,11 +122,32 @@ app.all('/mcp', requireBearerAuth({
     }
 
     if (req.method === 'POST' && isInitializeRequest(parsedBody)) {
-      const { server: newServer } = createMcpServer();
-      const newTransport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
-      });
-      await newServer.connect(newTransport);
+      let newServer: Server;
+      let newTransport: StreamableHTTPServerTransport;
+      try {
+        const created = createMcpServer();
+        newServer = created.server;
+        newTransport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID(),
+        });
+        await newServer.connect(newTransport);
+      } catch (createErr) {
+        const createError = createErr instanceof Error ? createErr : new Error(String(createErr));
+        console.error('[MCP] createMcpServer or connect error:', createError.message);
+        console.error(createError.stack);
+        if (!res.headersSent) {
+          res.status(500).json({
+            jsonrpc: '2.0',
+            error: {
+              code: -32603,
+              message: 'Internal error',
+              data: { detail: createError.message },
+            },
+            id: null,
+          });
+        }
+        return;
+      }
       await asyncLocalStorage.run({ auth }, () => newTransport.handleRequest(req, res, parsedBody));
       const sid = newTransport.sessionId;
       if (sid) {
@@ -162,4 +183,5 @@ app.listen(PORT, () => {
   console.error(`Animoca Credential MCP HTTP server listening on http://localhost:${PORT}`);
   console.error(`MCP endpoint: ${mcpServerUrl.href}`);
   console.error(`OAuth issuer: ${issuerUrl.href}`);
+  console.error('If clients get 500 with "server_error": token may be missing/expired — re-add the MCP server in Cursor and complete OAuth login.');
 });
