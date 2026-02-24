@@ -10,8 +10,16 @@ import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middlew
 import { createCredentialOAuthProvider, getBaseUrl } from './auth/credentialOAuthProvider.js';
 import { handleOAuthCallback } from './oauth/callback.js';
 import { asyncLocalStorage } from './auth/requestContext.js';
+import { setSessionFromAuthInfo } from './auth/setSessionFromAuthInfo.js';
+import { session } from './session.js';
+import {
+  runChatLoop,
+  authFromHeadersToAuthInfo,
+  type ChatAuthFromHeaders,
+} from './chat/chatLoop.js';
 
 const PORT = Number(process.env.MCP_HTTP_PORT) || 3749;
+const CORS_ORIGIN = process.env.MCP_CORS_ORIGIN || '';
 const baseUrl = getBaseUrl();
 const issuerUrl = new URL(baseUrl);
 const signerUrl = process.env.CREDENTIAL_SIGNER_URL || 'https://credential-challenge-signer.netlify.app';
@@ -46,12 +54,69 @@ const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
+/** Set CORS headers for dashboard chat (POST /chat). */
+function setChatCors(res: express.Response): void {
+  if (CORS_ORIGIN.trim()) {
+    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN.trim());
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-dashboard-auth, x-issuer-id, x-verifier-id, x-api-url');
+}
+
+app.options('/chat', (_req, res) => {
+  setChatCors(res);
+  res.sendStatus(204);
+});
+
+app.post('/chat', (req, res) => {
+  setChatCors(res);
+  const body = req.body as { message?: string; conversationId?: string };
+  const message = typeof body?.message === 'string' ? body.message.trim() : '';
+  if (!message) {
+    res.status(400).json({ error: 'Missing or empty message' });
+    return;
+  }
+
+  const dashboardToken = (req.headers['x-dashboard-auth'] as string)?.trim();
+  if (!dashboardToken) {
+    res.status(401).json({ error: 'Missing x-dashboard-auth header' });
+    return;
+  }
+
+  const issuerId = (req.headers['x-issuer-id'] as string)?.trim() ?? '';
+  const verifierId = (req.headers['x-verifier-id'] as string)?.trim() ?? '';
+  const apiUrl = (req.headers['x-api-url'] as string)?.trim() || undefined;
+
+  const authFromHeaders: ChatAuthFromHeaders = {
+    dashboardToken,
+    issuerId: issuerId || undefined,
+    verifierId: verifierId || undefined,
+    environment: 'staging',
+  };
+  if (apiUrl) authFromHeaders.apiUrl = apiUrl;
+
+  const authInfo = authFromHeadersToAuthInfo(authFromHeaders);
+  setSessionFromAuthInfo(authInfo);
+  if (apiUrl) session.set('apiUrl', apiUrl);
+
+  runChatLoop(message, authInfo)
+    .then((reply) => {
+      res.status(200).json({ reply });
+    })
+    .catch((err) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[MCP] /chat error:', msg);
+      res.status(500).json({ error: msg });
+    });
+});
+
 app.get('/', (_req, res) => {
   res.setHeader('Content-Type', 'text/plain');
   res.send(
     'Animoca Credential MCP server is running.\n\n' +
       'Endpoints:\n' +
       '  GET  /                             – this page\n' +
+      '  POST /chat                         – Dashboard AI Assistant (x-dashboard-auth, x-issuer-id, x-verifier-id)\n' +
       '  GET  /mcp                          – MCP (requires Bearer token)\n' +
       '  GET  /.well-known/oauth-authorization-server – OAuth discovery\n' +
       '  GET  /oauth/login                 – OAuth login page\n'

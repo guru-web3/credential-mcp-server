@@ -214,7 +214,8 @@ The AI will pick the right tools and parameters. You don’t need to know tool n
 | `credential_template_info` | Get repo URL, branch, and clone command for issuance or verifier template (no auth). Default issuance branch: `mcp/template`; also `sample/passport-age`. |
 | `credential_issuance_app_config` | Generate .env snippet for issuance app from session. Includes instructions to auto-generate PARTNER_PRIVATE_KEY and public key (no manual steps). JWKS kid defaults to partner ID. |
 | `credential_verifier_app_config` | Generate .env snippet for verifier app from session. |
-| `credential_app_steps` | Get ordered steps: clone → install → generate keys + env → dev → build → deploy → set JWKS URL in dashboard. |
+| `credential_app_steps` | Get ordered steps: clone → install → generate keys + env → dev → (optional) configure JWKS → build → deploy → set JWKS URL. |
+| `credential_configure_issuer_jwks` | Set JWKS URL and whitelist domain in the dashboard from one origin. Optionally probe the JWKS endpoint first (use after starting the issuance server or tunnel). |
 
 ---
 
@@ -226,8 +227,8 @@ After creating schemas and programs, you can get the template repo, env config, 
 2. AI can call `credential_template_info` (appType: `issuance`, optional branch: `mcp/template` or `sample/passport-age`) → repo URL and clone command with branch.  
 3. AI calls `credential_issuance_app_config` (after auth) → env snippet and **instructions to auto-generate** PARTNER_PRIVATE_KEY and NEXT_PUBLIC_PARTNER_PUBLIC_KEY (openssl commands); agent runs them and writes .env.local.  
 4. AI calls `credential_app_steps` (appType: `issuance`) → ordered checklist.  
-5. AI runs: clone with branch → install → paste env (with generated keys) → `pnpm dev` → optionally build and deploy.  
-6. **Post-deploy:** Set JWKS URL in the credential Partner Dashboard to `https://<your-deployed-origin>/jwks.json` (kid defaults to partner ID). Whitelist your domain.
+5. AI runs: clone with branch → install → paste env (with generated keys) → `pnpm dev` (or `pnpm dev:https` for local HTTPS). For local testing before deploy: call `credential_configure_issuer_jwks` with origin (e.g. `https://localhost:3000` or a tunnel URL like `https://abc.ngrok.io`) so the tool sets JWKS URL and whitelist in one step; use a tunnel if testing against the cloud credential API. Optionally build and deploy.  
+6. **Post-deploy:** Call `credential_configure_issuer_jwks` with your deployed origin, or in the credential Partner Dashboard set JWKS URL to `https://<your-deployed-origin>/jwks.json` and whitelist your domain.
 
 Same flow for verifier: `credential_template_info` (verifier), `credential_verifier_app_config`, `credential_app_steps` (verifier).
 
@@ -301,6 +302,7 @@ See [docs/test-scenarios.md](docs/test-scenarios.md) for Zephyr scenario mapping
 ### Environment
 
 - **MCP server:** No env vars are required for basic use (STDIO). Environment (staging/production) and API URLs are set when you authenticate. For the **HTTP server** (OAuth): `MCP_OAUTH_BASE_URL`, `MCP_OAUTH_JWT_SECRET`, `MCP_OAUTH_REDIRECT_URIS`, `MCP_HTTP_PORT`, and `CREDENTIAL_SIGNER_URL` (see [Deploy option 3](#deploy-option-3-remote-http-server-with-oauth-needs-authentication-in-cursor)).
+- **Dashboard AI Assistant (POST /chat):** When the credential dashboard uses the **AI Assistant** (chat UI), it sends messages to `POST /chat` with dashboard auth headers. For that endpoint you must set **`OPENAI_API_KEY`** (required). Optionally: **`MCP_CORS_ORIGIN`** (e.g. `http://localhost:3000`) so the dashboard origin can call `/chat`; **`OPENAI_BASE_URL`** for a custom API base (e.g. OpenRouter or local Ollama); **`OPENAI_CHAT_MODEL`** or **`CHAT_MODEL`** (default `gpt-4o-mini`).
 - **Signer URL:** To use the **deployed** Next.js signer (e.g. on Netlify) so `credential_get_login_challenge` returns a public URL, set **`CREDENTIAL_SIGNER_URL`** to your signer app URL (e.g. `https://your-signer.netlify.app`). If unset, the default is `https://credential-challenge-signer.netlify.app` (for local `npm run signer`).
 
 ---
