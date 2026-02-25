@@ -19,7 +19,10 @@ import {
 } from './chat/chatLoop.js';
 
 const PORT = Number(process.env.MCP_HTTP_PORT) || 3749;
-const CORS_ORIGIN = process.env.MCP_CORS_ORIGIN || '';
+const CORS_ORIGINS = (process.env.MCP_CORS_ORIGIN || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
 const baseUrl = getBaseUrl();
 const issuerUrl = new URL(baseUrl);
 const signerUrl = process.env.CREDENTIAL_SIGNER_URL || 'https://credential-challenge-signer.netlify.app';
@@ -54,22 +57,27 @@ const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-/** Set CORS headers for dashboard chat (POST /chat). */
-function setChatCors(res: express.Response): void {
-  if (CORS_ORIGIN.trim()) {
-    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN.trim());
+/** Set CORS headers for dashboard chat (POST /chat). Reflect request Origin if allowed. */
+function setChatCors(req: express.Request, res: express.Response): void {
+  const origin = (req.headers.origin as string) || '';
+  if (origin && CORS_ORIGINS.length > 0) {
+    if (CORS_ORIGINS.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+  } else if (CORS_ORIGINS.length > 0) {
+    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGINS[0]);
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-dashboard-auth, x-issuer-id, x-verifier-id, x-api-url');
 }
 
-app.options('/chat', (_req, res) => {
-  setChatCors(res);
+app.options('/chat', (req, res) => {
+  setChatCors(req, res);
   res.sendStatus(204);
 });
 
 app.post('/chat', (req, res) => {
-  setChatCors(res);
+  setChatCors(req, res);
   const body = req.body as { message?: string; conversationId?: string };
   const message = typeof body?.message === 'string' ? body.message.trim() : '';
   if (!message) {
@@ -114,12 +122,12 @@ app.get('/', (_req, res) => {
   res.setHeader('Content-Type', 'text/plain');
   res.send(
     'Animoca Credential MCP server is running.\n\n' +
-      'Endpoints:\n' +
-      '  GET  /                             – this page\n' +
-      '  POST /chat                         – Dashboard AI Assistant (x-dashboard-auth, x-issuer-id, x-verifier-id)\n' +
-      '  GET  /mcp                          – MCP (requires Bearer token)\n' +
-      '  GET  /.well-known/oauth-authorization-server – OAuth discovery\n' +
-      '  GET  /oauth/login                 – OAuth login page\n'
+    'Endpoints:\n' +
+    '  GET  /                             – this page\n' +
+    '  POST /chat                         – Dashboard AI Assistant (x-dashboard-auth, x-issuer-id, x-verifier-id)\n' +
+    '  GET  /mcp                          – MCP (requires Bearer token)\n' +
+    '  GET  /.well-known/oauth-authorization-server – OAuth discovery\n' +
+    '  GET  /oauth/login                 – OAuth login page\n'
   );
 });
 
