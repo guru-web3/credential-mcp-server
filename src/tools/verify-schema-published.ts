@@ -26,7 +26,7 @@ export async function verifySchemaPublished(args: z.infer<typeof VerifySchemaPub
 
   const issuerId = session.get('issuerId');
   if (!issuerId) {
-    throw new Error('No issuer ID found. Please authenticate first.');
+    throw new Error('No issuer ID found. Re-connect to the MCP server to authenticate.');
   }
 
   const schemaId = args.schemaId || session.get('schemaId');

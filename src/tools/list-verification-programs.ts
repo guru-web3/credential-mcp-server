@@ -36,7 +36,7 @@ export async function listVerificationPrograms(
 ): Promise<{ programs: ProgramRecord[]; total: number; verifierId: string }> {
   const verifierId = session.get('verifierId');
   if (!verifierId) {
-    throw new Error('No verifier ID in session. Use credential_authenticate first.');
+    throw new Error('No verifier ID in session. Re-connect to the MCP server to authenticate.');
   }
 
   const validated = ListVerificationProgramsArgsSchema.parse(args);

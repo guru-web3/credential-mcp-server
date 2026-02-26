@@ -58,7 +58,7 @@ export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>)
 
   const issuerId = session.get('issuerId');
   if (!issuerId) {
-    throw new Error('No issuer ID in session. Use credential_authenticate first.');
+    throw new Error('No issuer ID in session. Re-connect to the MCP server to authenticate.');
   }
 
   const { schemaName, schemaType, dataPoints, description, version } = args;

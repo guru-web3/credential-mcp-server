@@ -83,7 +83,7 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
   const environment = session.get('environment');
 
   if (!dashboardToken || !issuerId) {
-    throw new Error('Missing authentication tokens. Please authenticate first.');
+    throw new Error('Missing authentication tokens. Re-connect to the MCP server to authenticate.');
   }
 
   // Payment API: same endpoint accepts init (schemaId only) or store (schemaId, paymentFeeSchemaId?, pricingModel?, complianceAccessKeyEnabled?).

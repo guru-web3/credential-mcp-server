@@ -123,7 +123,7 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
   const issuerId = session.get('issuerId');
   
   if (!partnerId) {
-    throw new Error('Session missing partnerId. Re-authenticate with credential_authenticate.');
+    throw new Error('Session missing partnerId. Re-connect to the MCP server to authenticate.');
   }
 
   // If issuerDid is missing from session, try to fetch it from the API
@@ -137,7 +137,7 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
   }
 
   if (!issuerDid) {
-    throw new Error('Session missing issuerDid. Re-authenticate with credential_authenticate or check that the API returns issuerDid.');
+    throw new Error('Session missing issuerDid. Re-connect to the MCP server to authenticate, or check that the API returns issuerDid.');
   }
 
   const requestedId = args?.credentialTemplateId ?? session.get('credentialTemplateId');

@@ -18,7 +18,7 @@ export const CreateProgramsArgsSchema = z.object({
           operator: z
             .union([operatorEnum, z.string().transform((s) => (OPERATORS.includes(String(s).trim() as typeof OPERATORS[number]) ? String(s).trim() as typeof OPERATORS[number] : '='))])
             .describe('Comparison operator'),
-          value: z.union([z.string(), z.coerce.number(), z.coerce.boolean()]).describe('Value to compare against'),
+          value: z.union([z.string(), z.boolean(), z.coerce.number()]).describe('Value to compare against (string, boolean, or number; strict boolean so true/false are not coerced to 1/0)'),
         })
       )
       .min(1, 'At least one condition is required per program')
@@ -51,13 +51,17 @@ function mapOperatorAndValue(operator: string, value: string | number | boolean)
   return { op: operatorMap[operator] || operator, value };
 }
 
-function buildCredentialSubjectQuery(conditions: any[]) {
-  const credentialSubject: Record<string, any> = {};
-  conditions.forEach(condition => {
-    const { op, value } = mapOperatorAndValue(condition.operator, condition.value);
-    credentialSubject[condition.attribute] = { [op]: value };
-  });
-  return credentialSubject;
+/**
+ * Build credentialSubject with a single attribute (one condition). Used so we send one zkQuery
+ * per condition, matching the dashboard. Value is sent as-is (dashboard sends boolean true/false).
+ */
+function buildSingleConditionCredentialSubject(condition: {
+  attribute: string;
+  operator: string;
+  value: string | number | boolean;
+}): Record<string, { [op: string]: string | number | boolean }> {
+  const { op, value } = mapOperatorAndValue(condition.operator, condition.value);
+  return { [condition.attribute]: { [op]: value } };
 }
 
 /** Dashboard format: [attributeId] + sha1(value) */
@@ -89,7 +93,7 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
 
   const issuerDid = session.get('issuerDid');
   if (!issuerDid) {
-    throw new Error('No issuer DID found in session. Please authenticate first.');
+    throw new Error('No issuer DID found in session. Re-connect to the MCP server to authenticate.');
   }
 
   const issuerId = session.get('issuerId');
@@ -135,25 +139,29 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
 
   for (const program of programs) {
     try {
-      const credentialSubject = buildCredentialSubjectQuery(program.conditions);
-      const zkQueryPayload = {
-        circuitId: 'credentialAtomicQueryMTPV2OnChain',
-        query: {
-          skipClaimRevocationCheck: true,
-          allowedIssuers: [issuerDid],
-          context: schemaContext,
-          type: schemaType,
-          credentialSubject,
-        },
-      };
-
-      const zkQueryPayloadStr = JSON.stringify(zkQueryPayload);
-
-      const firstCondition = program.conditions[0];
-      const zkQueryName =
-        firstCondition != null
-          ? generateZkQueryName(firstCondition.attribute, firstCondition.value)
-          : program.programName;
+      // One zkQuery per condition (match dashboard): each zkQuery has credentialSubject with a single key.
+      const zkQueryInfoVOSPayload = program.conditions.map((condition) => {
+        const credentialSubject = buildSingleConditionCredentialSubject(condition);
+        const zkQueryPayload = {
+          circuitId: 'credentialAtomicQueryMTPV2OnChain',
+          query: {
+            skipClaimRevocationCheck: true,
+            allowedIssuers: [issuerDid],
+            context: schemaContext,
+            type: schemaType,
+            credentialSubject,
+          },
+        };
+        const zkQueryPayloadStr = JSON.stringify(zkQueryPayload);
+        const zkQueryName = generateZkQueryName(condition.attribute, condition.value);
+        return {
+          zkQueryName,
+          zkQueryPayload: zkQueryPayloadStr,
+          schemeId: schemaId,
+          zkQueryStatus: 'DRAFT' as const,
+          circuitId: 'credentialAtomicQueryMTPV2OnChain',
+        };
+      });
 
       const programData = {
         verifierProgramInfoVO: {
@@ -164,19 +172,14 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
           complianceAccessKeyRequired: 0,
           issuerDids: [{ did: issuerDid, pricingId: null }],
         },
-        zkQueryInfoVOS: [
-          {
-            zkQueryName,
-            zkQueryPayload: zkQueryPayloadStr,
-            schemeId: schemaId,
-            zkQueryStatus: 'DRAFT',
-            circuitId: 'credentialAtomicQueryMTPV2OnChain',
-          },
-        ],
+        zkQueryInfoVOS: zkQueryInfoVOSPayload,
       };
 
-      console.log(`[DEBUG] Creating program: ${program.programName}`);
-      console.log('[DEBUG] zkQueryPayload.query (type, context, credentialSubject):', JSON.stringify({ type: schemaType, context: schemaContext, credentialSubject }, null, 2));
+      console.log(`[DEBUG] Creating program: ${program.programName} (${program.conditions.length} condition(s), ${zkQueryInfoVOSPayload.length} zkQuery(s))`);
+      program.conditions.forEach((c, i) => {
+        const cs = buildSingleConditionCredentialSubject(c);
+        console.log(`[DEBUG] zkQuery[${i}] credentialSubject:`, JSON.stringify(cs));
+      });
       console.log('[DEBUG] Full program request body:', JSON.stringify(programData, null, 2));
 
       // Program create: dashboard sends only x-verifier-id (no x-issuer-id)

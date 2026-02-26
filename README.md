@@ -2,6 +2,12 @@
 
 Use **natural language** in Cursor (or other MCP clients) to manage AIR credentials: create schemas, set pricing, create issuance and verification programs, and deploy. No need to remember tool names—just describe what you want.
 
+### For AI / models (instructions)
+
+- **Authentication:** There are no auth tools. The user must **connect** to the MCP server (Cursor: click **Connect** or **Start** next to the server). For HTTP transport, they complete the browser sign-in. Session (issuerId, verifierId, tokens) is set from that; do not suggest calling any "credential_authenticate" or "credential_get_login_challenge" tool.
+- **Recommended order:** (1) User connects. (2) `credential_create_schema` (schemaName, schemaType, dataPoints). (3) `credential_create_program` (schemaId, optional dates, issueMax, complianceAccessKeyEnabled). (4) `credential_setup_pricing` (schemaId, pricingModel: "each_attempt" | "pay_on_success", optional priceUsd, complianceAccessKeyEnabled). (5) `credential_create_verification_programs` (schemaId, programs with conditions). Schema is verified automatically before pricing and program creation.
+- **Tool purposes:** Use `credential_docs` when the user asks how to set up or verify credentials; it returns step-by-step markdown aligned with [AIR Kit Quickstart 2 (Issue Credentials)](https://docs.moca.network/airkit/quickstart/issue-credentials) and [Quickstart 3 (Verify Credentials)](https://docs.moca.network/airkit/quickstart/verify-credentials), including production standards (JWT on backend, env for secrets). Other tools: create_schema, create_program, setup_pricing, create_verification_programs, list_* (schemas, templates, programs), template_info, issuance_app_config, verifier_app_config, app_steps, configure_issuer_jwks.
+
 ---
 
 ## How to deploy (so others can use from Cursor MCP)
@@ -87,7 +93,7 @@ To get **standard MCP login** like Figma or Slack—Cursor shows **"Needs authen
    ```
    For a deployed server, use your HTTPS URL, e.g. `"url": "https://your-mcp-host.com/mcp"`.
 
-4. **Connect**: In Cursor, click **Connect** (or **Start**) next to the server. Cursor will open a browser; sign in with your wallet on the signer page, paste the JSON, and you’re authenticated. No need to call `credential_authenticate` manually—the Bearer token is sent on every request.
+4. **Connect**: In Cursor, click **Connect** (or **Start**) next to the server. Cursor will open a browser; sign in with your wallet on the signer page, paste the JSON, and you’re authenticated. The Bearer token is sent on every request; there is no separate auth tool to call.
 
 ---
 
@@ -140,10 +146,10 @@ In Cursor **Settings → MCP**, add:
 
 Restart Cursor (or reload the window) after changing MCP settings.
 
-### 2. Authenticate once
+### 2. Connect (authenticate) once
 
 **Recommended: wallet address (no private key)**  
-Say you want to authenticate with your **wallet address**. The AI will call `credential_get_login_challenge` and give you a signer URL. Open it in a browser, sign the message with your wallet, copy the JSON result, and paste it back (or say “use this” and paste). The AI then calls `credential_authenticate` with that JSON. You never share a private key.
+Say you want to authenticate with your **wallet address**. If you use the HTTP server, Cursor will open a browser and give you a signer URL. Open it in a browser, sign the message with your wallet, copy the JSON result, and paste it back (or say “use this” and paste). There are no auth tools to call—the session is set automatically when you complete the flow.
 
 - *“Authenticate me for staging with my wallet 0x…”*  
 - *“I want to use my wallet address to log in, no private key.”*
@@ -177,11 +183,7 @@ The AI will pick the right tools and parameters. You don’t need to know tool n
 
 | You say | What the MCP does |
 |--------|--------------------|
-| *“Authenticate with staging using my wallet address 0x…”* | `credential_get_login_challenge` first (signer URL), then `credential_authenticate` with signed JSON |
-| *“Authenticate with my private key.”* | `credential_authenticate` (private key) |
 | *“Create a schema for NFT holders with a field numberOfNfts (integer).”* | `credential_create_schema` |
-| *“Create a schema for age with one field: age, number.”* | `credential_create_schema` |
-| *“Check that my schema is published.”* | `credential_verify_schema_published` |
 | *“Set pricing for this schema: pay on success, no USD fee.”* | `credential_setup_pricing` |
 | *“Create an issuance program (credential template) for my last schema.”* | `credential_create_program` |
 | *“Create verification programs: age_over_18 where age >= 18.”* | `credential_create_verification_programs` |
@@ -189,32 +191,34 @@ The AI will pick the right tools and parameters. You don’t need to know tool n
 | *“List my verification programs.”* | `credential_list_programs` |
 | *“List my credential templates.”* | `credential_list_templates` |
 | *“List my schemas.”* | `credential_list_schemas` |
-| *“How do I issue and verify credentials in my app?”* | `credential_docs` (issuance + verification steps and links) |
+| *“How do I issue and verify credentials in my app?”* | `credential_docs` (issuance + verification steps; aligned with AIR Kit Quickstart 2 & 3, production standards) |
 | *“I want to deploy the issuance app; which repo and branch?”* | `credential_template_info` (issuance; branch mcp/template or sample/passport-age) |
-| *“Generate .env for my issuance app and tell me how to generate the keys.”* | `credential_issuance_app_config` (after auth; returns snippet + key-generation instructions) |
+| *“Generate .env for my issuance app and tell me how to generate the keys.”* | `credential_issuance_app_config` (after connect; returns snippet + key-generation instructions) |
 | *“Give me the steps to clone, install, and deploy the issuance template.”* | `credential_app_steps` (issuance) |
+
+
+Authentication is done by **connecting** to the MCP server in Cursor (Connect/Start or HTTP OAuth); there are no auth tools.
+
+**Production standards:** Issuance and verification flows follow [AIR Kit Quickstart 2 (Issue Credentials)](https://docs.moca.network/airkit/quickstart/issue-credentials) and [Quickstart 3 (Verify Credentials)](https://docs.moca.network/airkit/quickstart/verify-credentials). Use JWT on the backend, keep secrets in env, configure JWKS in the Developer Dashboard. See [docs/QUICKSTART-ISSUE-VERIFY.md](docs/QUICKSTART-ISSUE-VERIFY.md) for MCP ↔ quickstart mapping.
 
 ---
 
 ## Available tools (for the AI)
 
 | Tool | Purpose |
-|------|--------|
-| `credential_get_login_challenge` | **Recommended.** When user has only a wallet address: get one-time message and signer URL; user signs in browser, then use result in `credential_authenticate`. |
-| `credential_authenticate` | Log in with (1) private key, or (2) signed JSON from signer page (after `credential_get_login_challenge`). Required before other tools. |
 | `credential_create_schema` | Create and publish a schema (name, type, data points). |
-| `credential_verify_schema_published` | Verify a schema is published and ready for programs. |
 | `credential_setup_pricing` | Set pricing model for a schema (e.g. pay_on_success, optional price). API stores schema, pricing model, and CAK only; the numeric price is set **on-chain**. When `priceUsd` is a positive number (> 0), the result includes **`setPriceUrl`** — open that URL in a browser to set the price on-chain (signer app /set-price; connect wallet on MOCA and confirm). If `setPriceUrl` is absent, use Credential Dashboard → Pricing → Define schema price. |
 | `credential_create_program` | Create an issuance program (credential template) for a schema. |
 | `credential_create_verification_programs` | Create (and deploy) verification programs with conditions. |
 | `credential_list_schemas` | List your (or others’) schemas. |
 | `credential_list_templates` | List issuance programs (templates) for use as credentialId. |
 | `credential_list_programs` | List verification programs for use as programId in verifyCredential. |
-| `credential_docs` | Get issuance and/or verification flow docs and links. |
+| `credential_docs` | Get issuance and/or verification flow docs; aligned with [Quickstart 2](https://docs.moca.network/airkit/quickstart/issue-credentials) & [Quickstart 3](https://docs.moca.network/airkit/quickstart/verify-credentials), production standards. |
 | `credential_template_info` | Get repo URL, branch, and clone command for issuance or verifier template (no auth). Default issuance branch: `mcp/template`; also `sample/passport-age`. |
 | `credential_issuance_app_config` | Generate .env snippet for issuance app from session. Includes instructions to auto-generate PARTNER_PRIVATE_KEY and public key (no manual steps). JWKS kid defaults to partner ID. |
 | `credential_verifier_app_config` | Generate .env snippet for verifier app from session. |
 | `credential_app_steps` | Get ordered steps: clone → install → generate keys + env → dev → build → deploy → set JWKS URL in dashboard. |
+| `credential_configure_issuer_jwks` | Set JWKS URL and whitelist domain in dashboard from a single origin (requires auth). |
 
 ---
 
@@ -224,7 +228,7 @@ After creating schemas and programs, you can get the template repo, env config, 
 
 1. **“I want to deploy the issuance app”** or **“Set me up with the sample branch.”**  
 2. AI can call `credential_template_info` (appType: `issuance`, optional branch: `mcp/template` or `sample/passport-age`) → repo URL and clone command with branch.  
-3. AI calls `credential_issuance_app_config` (after auth) → env snippet and **instructions to auto-generate** PARTNER_PRIVATE_KEY and NEXT_PUBLIC_PARTNER_PUBLIC_KEY (openssl commands); agent runs them and writes .env.local.  
+3. AI calls `credential_issuance_app_config` (after connect) → env snippet and **instructions to auto-generate** PARTNER_PRIVATE_KEY and NEXT_PUBLIC_PARTNER_PUBLIC_KEY (openssl commands); agent runs them and writes .env.local.  
 4. AI calls `credential_app_steps` (appType: `issuance`) → ordered checklist.  
 5. AI runs: clone with branch → install → paste env (with generated keys) → `pnpm dev` → optionally build and deploy.  
 6. **Post-deploy:** Set JWKS URL in the credential Partner Dashboard to `https://<your-deployed-origin>/jwks.json` (kid defaults to partner ID). Whitelist your domain.
@@ -235,9 +239,9 @@ Same flow for verifier: `credential_template_info` (verifier), `credential_verif
 
 ## Typical flow (natural language)
 
-1. **“Authenticate for staging with my wallet 0x…”** → AI gives you signer URL; you sign in browser, paste JSON back; AI completes auth. (Or: **“Authenticate with my private key”** → you paste key when asked.)  
+1. **Connect** to the MCP server in Cursor (click Connect/Start). For HTTP server, complete the browser sign-in. No auth tool to call.  
 2. **“Create a schema for [X] with fields [Y].”**  
-3. **“Set pricing: pay on success.”** (or “per-issuance $0.50”)  
+3. **“Set pricing: pay on success.”** (or “per verification $0.50”)  
 4. **“Create an issuance program for that schema.”**  
 5. **“Create a verification program that [condition].”** (e.g. age >= 18)  
 6. **“List my verification programs.”** → Copy programId for your app.  
@@ -296,12 +300,12 @@ To run the scenario test runner (unit tests + optional E2E when `PRIVATE_KEY` or
 node scripts/run-scenario-tests.js
 ```
 
-See [docs/test-scenarios.md](docs/test-scenarios.md) for Zephyr scenario mapping and prompts for manual or AI-assisted testing.
+See [docs/test-scenarios.md](docs/test-scenarios.md) for Zephyr scenario mapping and prompts for manual or AI-assisted testing. For a copy-paste full flow (schema → program → pricing → all 15 VPs in two batches), see [docs/TESTING-REFERENCE.md](docs/TESTING-REFERENCE.md).
 
 ### Environment
 
 - **MCP server:** No env vars are required for basic use (STDIO). Environment (staging/production) and API URLs are set when you authenticate. For the **HTTP server** (OAuth): `MCP_OAUTH_BASE_URL`, `MCP_OAUTH_JWT_SECRET`, `MCP_OAUTH_REDIRECT_URIS`, `MCP_HTTP_PORT`, and `CREDENTIAL_SIGNER_URL` (see [Deploy option 3](#deploy-option-3-remote-http-server-with-oauth-needs-authentication-in-cursor)).
-- **Signer URL:** To use the **deployed** Next.js signer (e.g. on Netlify) so `credential_get_login_challenge` returns a public URL, set **`CREDENTIAL_SIGNER_URL`** to your signer app URL (e.g. `https://your-signer.netlify.app`). If unset, the default is `https://credential-challenge-signer.netlify.app` (for local `npm run signer`).
+- **Signer URL:** For the HTTP server OAuth flow, set **`CREDENTIAL_SIGNER_URL`** to your signer app URL (e.g. `https://your-signer.netlify.app`). If unset, the default is `https://credential-challenge-signer.netlify.app` (for local `npm run signer`).
 
 ---
 
@@ -410,3 +414,41 @@ List flows:
 → Expect: Calls after auth return list or empty list; before auth, clear “authenticate first” message.
 
 These prompts can be copy-pasted into Cursor (or any MCP client) to regression-test the AI’s tool choice and inputs.
+
+4. Test queries document (all UI/MCP scenarios)
+
+Deliverable: A single markdown file (e.g. credential-mcp-server/docs/TESTING-QUERIES.md or in the repo root) that provides copy-paste natural-language queries and/or example tool payloads to test every important field. Structure by flow.
+
+Schema creation
+One query per data type: “Create a schema with one string attribute …”, “… one integer attribute …”, “… one number attribute …”, “… one boolean attribute …”.
+
+One query with multiple data points including a description for each (and optional schema-level description).
+
+Example payloads for credential_create_schema with dataPoints: string, integer, number, boolean, and with description on attributes.
+
+Pricing
+“Set pricing to charge for all verification attempts” → pricingModel: 'each_attempt'.
+“Set pricing to charge only for successful verifications” → pricingModel: 'pay_on_success'.
+“Set price to 0.1 USD during setup” / “Set price to 1 USD” → priceUsd: 0.1 / priceUsd: 1.
+“Enable CAK for this schema’s pricing” → complianceAccessKeyEnabled: true.
+
+Program creation (issuance)
+“Create program with accessible start date 2025-01-01 and end date 2025-12-31” → accessibleStartAt, accessibleEndAt (ISO or empty).
+“Create program with max issuance 1000” → issueMax: 1000.
+“Create program with unlimited issuance” → issueMax: null.
+“Create program with CAK enabled” → complianceAccessKeyEnabled: 1.
+
+
+
+One combined example: start + end + issueMax + CAK.
+Verification programs
+Operators: “Is equal to”, “Is not equal to”, “Is greater than”, “Is less than”, “Greater or equal”, “Less or equal” (map to MCP =, !=, >, <, >=, <=; note dashboard script uses friendly names and maps to $eq, $ne, $gt, $lt; MCP uses >=/<= and maps internally).
+
+Per type: condition on a string attribute (e.g. = "value"); on an integer (e.g. >= 18); on a number (e.g. > 99.5); on a boolean (e.g. = true).
+
+Multiple conditions in one program (all must hold).
+Example credential_create_verification_programs payloads: one program with string condition, one with integer, one with number, one with boolean, one with multiple conditions.
+
+Cross-reference: In the same doc, add a short “Dashboard UI ↔ MCP” mapping: e.g. “Verifying on” = chain; “Select a schema” = schemaId; “Schema type” = schemeType; “Pricing model” = pricingModel; “CAK” = complianceAccessKeyEnabled; “Define query” = conditions (attribute, operator, value); “Data type: boolean/string/…” = attribute type when building verification queries.
+
+Optional: A small script (Node or shell) that runs a subset of these as MCP tool calls (e.g. create schema with all four types, then create program, then setup pricing, then create one verification program) for smoke testing; can live in credential-mcp-server/scripts/ and be documented in the same file.

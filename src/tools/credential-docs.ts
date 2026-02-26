@@ -1,6 +1,7 @@
 /**
  * Return structured docs and steps for issuance and/or verification.
- * Helps developers and AI follow the right flow without leaving the IDE.
+ * Aligned with AIR Kit Quickstart 2 (Issue Credentials) and Quickstart 3 (Verify Credentials).
+ * Production standards: JWT on backend, env for secrets, schema/program setup via MCP or Dashboard.
  */
 
 import { z } from 'zod';
@@ -22,24 +23,71 @@ export const CredentialDocsArgsSchema = z.object({
 
 export type CredentialDocsArgs = z.infer<typeof CredentialDocsArgsSchema>;
 
-const ISSUANCE_STEPS = `## Issuance flow (MCP-first)
+const ISSUANCE_STEPS = `## Quickstart 2: Issue Credentials (MCP + app)
 
-1. **Authenticate** – Recommended: call \`credential_get_login_challenge\` with the user’s wallet address, have them open the signer URL and sign, then \`credential_authenticate\` with the signed JSON (credentialsJson). Alternative: \`credential_authenticate\` with privateKey and environment (staging|production). Saves partnerId, issuerId, issuerDid.
-2. **Create schema** – \`credential_create_schema\` (schemaName, schemaType, dataPoints). Saves schemaId; schema is published when created.
-3. **Verify schema** – \`credential_verify_schema_published\` (schemaId optional). Confirms schema is published and accessible.
-4. **Create program** – \`credential_create_program\` (credentialName, schemeType, schemeTitle, expirationDuration, issueMax, ...). This is your **issuance program**; use returned programId as \`credentialId\` in SDK.
-5. **Set pricing** – \`credential_setup_pricing\` (schemaId, pricingModel, priceUsd optional default 0, cakEnabled, paymentFeeSchemaId optional).
-6. **In your app** – Use Issuer DID + program ID with AIR Kit \`airService.issueCredential\` or Issue on Behalf API.
+This flow is aligned with [AIR Kit Quickstart: Credential Issuance](https://docs.moca.network/airkit/quickstart/issue-credentials).
+
+### Before starting
+- Node.js v16+
+- (Recommended) [Login & Sessions Quickstart](https://docs.moca.network/airkit/quickstart/) completed or understood
+
+### MCP setup (schema + program + pricing)
+
+1. **Connect (auth)** – In Cursor, connect to the MCP server (Connect/Start or HTTP OAuth). Session is set automatically; no separate auth tool.
+
+2. **Create schema** – \`credential_create_schema\`:
+   - \`schemaName\`, \`schemaType\` (alphanumeric, unique), \`dataPoints\` (name, type: string|integer|number|boolean, optional description)
+   - Optional: \`description\`, \`version\` (default "1.0")
+   - [Schema Creation Guide](https://docs.moca.network/airkit/usage/credential/schema-creation)
+
+3. **Create issuance program** – \`credential_create_program\`:
+   - \`schemaId\` (or use last created). Use returned \`programId\` as \`credentialId\` in the SDK.
+   - Optional: \`expirationDuration\`, \`issueMax\`, \`accessibleStartAt\`/\`accessibleEndAt\`, \`complianceAccessKeyEnabled\`
+
+4. **Set pricing** – \`credential_setup_pricing\`:
+   - \`pricingModel\`: "each_attempt" or "pay_on_success"
+   - Optional: \`priceUsd\` (if > 0, use \`setPriceUrl\` for on-chain step), \`complianceAccessKeyEnabled\`
+
+### In your app (production standards)
+
+- **Install:** \`npm install @mocanetwork/airkit\`
+- **Config:** Partner ID and Issuer DID from [Developer Dashboard → Account → General](https://developers.sandbox.air3.com/dashboard/general).
+- **JWT:** For production, **generate JWTs on the backend** to keep private keys secure. [Partner Authentication](https://docs.moca.network/airkit/usage/partner-authentication). Configure JWKS URL in Dashboard.
+- **Issue:** \`airService.issueCredential({ authToken: jwt, credentialId, credentialSubject, issuerDid, curve?: "secp256r1" | "secp256k1" })\`. \`credentialSubject\` keys must match schema attributes (string, number, boolean, date).
+- **CAK:** If compliance encryption is enabled, handle \`result.cakPublicKey\` for encrypting compliance data.
+- **Server-side:** For issuance without user interaction, use [Issue on Behalf](https://docs.moca.network/airkit/usage/credential/issue-on-behalf).
 
 **Docs:** [Quickstart: Issue Credentials](https://docs.moca.network/airkit/quickstart/issue-credentials) | [Schema Creation](https://docs.moca.network/airkit/usage/credential/schema-creation) | [Issue on Behalf](https://docs.moca.network/airkit/usage/credential/issue-on-behalf)`;
 
-const VERIFICATION_STEPS = `## Verification flow (MCP-first)
+const VERIFICATION_STEPS = `## Quickstart 3: Verify Credentials (MCP + app)
 
-1. **Authenticate** – Same as issuance: recommended wallet-address flow via \`credential_get_login_challenge\` then \`credential_authenticate\` with signed JSON; or \`credential_authenticate\` with privateKey. Saves verifierId, verifierDid.
-2. **Schema** – You need a published schema (create via issuance flow or use existing). Use its schemaId for programs.
-3. **Create programs** – \`credential_create_verification_programs\` (schemaId, programs: [{ programName, conditions }]). Conditions: attribute, operator ('>','>=','<','<=','=','!='), value.
-4. **Apply/deploy** – If your program stays in Draft, apply it in the dashboard (Verifier → Programs → Details → Apply) or confirm whether create already activates it.
-5. **In your app** – Use Verifier DID + program ID with AIR Kit \`airService.verifyCredential\` (programId, redirectUrlForIssuer).
+This flow is aligned with [AIR Kit Quickstart: Credential Verification](https://docs.moca.network/airkit/quickstart/verify-credentials).
+
+### Before starting
+- Node.js v16+
+- Credentials to verify (e.g. from [Credential Issuance Quickstart](https://docs.moca.network/airkit/quickstart/issue-credentials))
+- (Recommended) [Login & Sessions Quickstart](https://docs.moca.network/airkit/quickstart/)
+
+### MCP setup (verification programs)
+
+1. **Connect (auth)** – Connect to the MCP server in Cursor (Connect/Start or HTTP OAuth). Session stores verifierId and verifierDid.
+
+2. **Schema** – Use a published schema (create via issuance flow or existing). Use its \`schemaId\` when creating programs.
+
+3. **Create verification programs** – \`credential_create_verification_programs\`:
+   - \`programs\`: each with \`programName\` and \`conditions\` (attribute, operator: ">" | ">=" | "<" | "<=" | "=" | "!=", value).
+   - Use returned program IDs as \`programId\` in the SDK. \`deploy: true\` (default) to make programs active.
+
+### Prerequisites (Dashboard)
+- Verifier → Fee wallet funded; [Faucet](https://devnet-scan.mocachain.org/faucet) for test tokens.
+
+### In your app (production standards)
+
+- **Install:** \`npm install @mocanetwork/airkit\`
+- **Config:** Partner ID and Verifier DID from [Developer Dashboard → Account → General](https://developers.sandbox.air3.com/dashboard/general). \`programId\` from Verifier → Programs.
+- **JWT:** For production, **generate JWTs on the backend** to keep private keys secure. [Partner Authentication](https://docs.moca.network/airkit/usage/partner-authentication). Configure JWKS URL in Dashboard.
+- **Verify:** \`airService.verifyCredential({ authToken: jwt, programId, redirectUrl })\`. \`redirectUrl\` (redirectUrlForIssuer) used when user has no credential and should be sent to issue one.
+- **Status:** \`result.status === "Compliant"\` → success (zkProofs, transactionHash; optionally \`cakPrivateKey\` for compliance decryption). \`"Non-Compliant"\` or other status → handle accordingly.
 
 **Docs:** [Quickstart: Verify Credentials](https://docs.moca.network/airkit/quickstart/verify-credentials) | [Credentials Overview](https://docs.moca.network/airkit/usage/credential/credentials-flow)`;
 

@@ -45,7 +45,7 @@ export async function listSchemas(
 ): Promise<{ schemas: SchemaRecord[]; total: number; issuerId: string }> {
   const issuerId = session.get('issuerId');
   if (!issuerId) {
-    throw new Error('No issuer ID in session. Use credential_authenticate first.');
+    throw new Error('No issuer ID in session. Re-connect to the MCP server to authenticate.');
   }
 
   const validated = ListSchemasArgsSchema.parse(args);

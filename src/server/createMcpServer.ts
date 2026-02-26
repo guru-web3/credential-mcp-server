@@ -6,13 +6,10 @@ import {
 
 import { getRequestAuth } from '../auth/requestContext.js';
 import { setSessionFromAuthInfo } from '../auth/setSessionFromAuthInfo.js';
-import { authenticate, AuthenticateArgsSchema } from '../tools/authenticate.js';
-import { getLoginChallenge, GetLoginChallengeArgsSchema } from '../tools/get-login-challenge.js';
 import { createSchema, CreateSchemaArgsSchema } from '../tools/create-schema.js';
 import { createCredentialTemplate, CreateCredentialTemplateArgsSchema } from '../tools/create-credential-template.js';
 import { setupPricing, SetupPricingArgsSchema } from '../tools/setup-pricing.js';
 import { createVerificationPrograms, CreateProgramsArgsSchema } from '../tools/create-programs.js';
-import { verifySchemaPublished, VerifySchemaPublishedArgsSchema } from '../tools/verify-schema-published.js';
 import { listCredentialTemplates, ListCredentialTemplatesArgsSchema } from '../tools/list-credential-templates.js';
 import { listVerificationPrograms, ListVerificationProgramsArgsSchema } from '../tools/list-verification-programs.js';
 import { credentialDocs, CredentialDocsArgsSchema } from '../tools/credential-docs.js';
@@ -54,24 +51,9 @@ export function createMcpServer(): { server: Server } {
       let result: unknown;
 
       switch (name) {
-        case 'credential_authenticate': {
-          const validated = AuthenticateArgsSchema.parse(normalized);
-          result = await authenticate(validated);
-          break;
-        }
-        case 'credential_get_login_challenge': {
-          const validated = GetLoginChallengeArgsSchema.parse(normalized);
-          result = await getLoginChallenge(validated);
-          break;
-        }
         case 'credential_create_schema': {
           const validated = CreateSchemaArgsSchema.parse(normalized);
           result = await createSchema(validated);
-          break;
-        }
-        case 'credential_verify_schema_published': {
-          const validated = VerifySchemaPublishedArgsSchema.parse(normalized);
-          result = await verifySchemaPublished(validated);
           break;
         }
         case 'credential_create_program': {

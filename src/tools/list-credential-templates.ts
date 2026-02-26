@@ -39,7 +39,7 @@ export async function listCredentialTemplates(
 ): Promise<{ templates: CredentialTemplateRecord[]; total: number; issuerId: string }> {
   const issuerId = session.get('issuerId');
   if (!issuerId) {
-    throw new Error('No issuer ID in session. Use credential_authenticate first.');
+    throw new Error('No issuer ID in session. Re-connect to the MCP server to authenticate.');
   }
 
   const validated = ListCredentialTemplatesArgsSchema.parse(args);

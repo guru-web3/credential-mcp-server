@@ -31,7 +31,7 @@ export async function getLoginChallenge(args: z.infer<typeof GetLoginChallengeAr
 
   return {
     success: true,
-    message: 'Use this challenge to sign in your wallet. Open the signer URL or paste the login message and timestamp into the signer page, then pass the result to credential_authenticate.',
+    message: 'Use this challenge to sign in your wallet. Open the signer URL or paste the login message and timestamp into the signer page, then complete authentication via Cursor Connect.',
     environment,
     walletAddress: addr,
     loginMessage,
@@ -43,7 +43,7 @@ export async function getLoginChallenge(args: z.infer<typeof GetLoginChallengeAr
       `Open the signer page: ${signerUrl}`,
       'Or run "npm run signer" in this repo and paste the message and timestamp into the page.',
       'Sign the message with your wallet, then copy the JSON output.',
-      'Call credential_authenticate with walletAddress, signature, and timestamp (no private key).',
+      'Complete authentication via Cursor Connect with the signed result (walletAddress, signature, timestamp).',
     ],
   };
 }

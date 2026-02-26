@@ -82,7 +82,7 @@ export async function configureIssuerJwks(args: ConfigureIssuerJwksArgs): Promis
   if (!issuerId) {
     return {
       success: false,
-      error: 'No issuer ID in session. Use credential_authenticate first.',
+      error: 'No issuer ID in session. Re-connect to the MCP server to authenticate.',
     };
   }
 

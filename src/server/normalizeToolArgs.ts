@@ -97,8 +97,6 @@ export function normalizeToolArgs(toolName: string, args: Raw): Raw {
       };
     case 'credential_create_verification_programs':
       return { ...raw, schemaId: pickFirst(raw.schemaId, raw.schemeId) };
-    case 'credential_verify_schema_published':
-      return { ...raw, schemaId: pickFirst(raw.schemaId, raw.schemeId) };
     case 'credential_list_schemas':
       return {
         ...raw,
@@ -114,15 +112,6 @@ export function normalizeToolArgs(toolName: string, args: Raw): Raw {
     case 'credential_template_info':
     case 'credential_app_steps':
       return { ...raw, appType: pickFirst(raw.appType, raw.app_type) };
-    case 'credential_authenticate':
-      return {
-        ...raw,
-        walletAddress: pickFirst(raw.walletAddress, raw.wallet_address),
-        credentialsJson: pickFirst(raw.credentialsJson, raw.credentials_json),
-        privateKey: pickFirst(raw.privateKey, raw.private_key),
-      };
-    case 'credential_get_login_challenge':
-      return { ...raw, walletAddress: pickFirst(raw.walletAddress, raw.wallet_address) };
     default:
       return raw;
   }

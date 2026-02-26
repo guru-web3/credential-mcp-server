@@ -47,10 +47,10 @@ export async function createCredentialTemplate(
   const issuerId = session.get('issuerId');
   const dashboardToken = session.get('dashboardToken');
   if (!issuerId) {
-    throw new Error('No issuer ID found in session. Please authenticate first.');
+    throw new Error('No issuer ID found in session. Re-connect to the MCP server to authenticate.');
   }
   if (!dashboardToken) {
-    throw new Error('No dashboard token found in session. Please authenticate first.');
+    throw new Error('No dashboard token found in session. Re-connect to the MCP server to authenticate.');
   }
 
   // Resolve schemaId: input takes precedence, then session
