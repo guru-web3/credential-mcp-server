@@ -47,6 +47,7 @@ Use the provided tools to perform actions. When the user asks to create somethin
 export interface ChatAuthFromHeaders {
   dashboardToken: string;
   issuerId?: string;
+  issuerDid?: string;
   verifierId?: string;
   partnerId?: string;
   apiUrl?: string;
@@ -65,6 +66,7 @@ export function authFromHeadersToAuthInfo(headers: ChatAuthFromHeaders): AuthInf
     extra: {
       dashboardToken: headers.dashboardToken,
       issuerId: headers.issuerId,
+      issuerDid: headers.issuerDid,
       verifierId: headers.verifierId,
       partnerId: headers.partnerId,
       environment: headers.environment ?? 'staging',

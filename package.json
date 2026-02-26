@@ -18,7 +18,7 @@
     "inspector": "npx @modelcontextprotocol/inspector node dist/index.js",
     "signer": "npx -y serve static -p 3747",
     "signer:next": "cd signer-app && npm run build && npx -y serve out -p 3748",
-    "start:http": "node -r dotenv/config dist/httpServer.js"
+    "start:http": "tsc && node -r dotenv/config dist/httpServer.js"
   },
   "keywords": [
     "mcp",

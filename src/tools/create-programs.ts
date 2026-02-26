@@ -18,7 +18,7 @@ export const CreateProgramsArgsSchema = z.object({
           operator: z
             .union([operatorEnum, z.string().transform((s) => (OPERATORS.includes(String(s).trim() as typeof OPERATORS[number]) ? String(s).trim() as typeof OPERATORS[number] : '='))])
             .describe('Comparison operator'),
-          value: z.union([z.string(), z.coerce.number(), z.coerce.boolean()]).describe('Value to compare against'),
+          value: z.union([z.string(), z.boolean(), z.coerce.number()]).describe('Value to compare against (string, boolean, or number; strict boolean so true/false are not coerced to 1/0)'),
         })
       )
       .min(1, 'At least one condition is required per program')
@@ -51,13 +51,17 @@ function mapOperatorAndValue(operator: string, value: string | number | boolean)
   return { op: operatorMap[operator] || operator, value };
 }
 
-function buildCredentialSubjectQuery(conditions: any[]) {
-  const credentialSubject: Record<string, any> = {};
-  conditions.forEach(condition => {
-    const { op, value } = mapOperatorAndValue(condition.operator, condition.value);
-    credentialSubject[condition.attribute] = { [op]: value };
-  });
-  return credentialSubject;
+/**
+ * Build credentialSubject with a single attribute (one condition). Used so we send one zkQuery
+ * per condition, matching the dashboard. Value is sent as-is (dashboard sends boolean true/false).
+ */
+function buildSingleConditionCredentialSubject(condition: {
+  attribute: string;
+  operator: string;
+  value: string | number | boolean;
+}): Record<string, { [op: string]: string | number | boolean }> {
+  const { op, value } = mapOperatorAndValue(condition.operator, condition.value);
+  return { [condition.attribute]: { [op]: value } };
 }
 
 /** Dashboard format: [attributeId] + sha1(value) */
@@ -75,6 +79,49 @@ interface SchemeByIdData {
   jsonLdUrl?: string;
   schemeUrl?: string;
   schemeAttributes?: { uris?: { jsonLdContext?: string } };
+  /** Attribute details from API */
+  attribute?: any;
+  attributeObj?: any;
+  [key: string]: any;
+}
+
+interface SchemaAttribute {
+  name: string;
+  type?: string;
+  description?: string;
+}
+
+/** Extract attribute names and types from schema response */
+function extractSchemaAttributes(schemaData: SchemeByIdData): SchemaAttribute[] {
+  const attributes: Map<string, SchemaAttribute> = new Map();
+  
+  // Try attributeObj (nested structure with data array)
+  if (schemaData.attributeObj?.data && Array.isArray(schemaData.attributeObj.data)) {
+    schemaData.attributeObj.data.forEach((attr: any) => {
+      if (attr.name) {
+        attributes.set(attr.name, {
+          name: attr.name,
+          type: attr.type || attr.attributeType || 'unknown',
+          description: attr.description || attr.attributeDescription,
+        });
+      }
+    });
+  }
+  
+  // Try attribute (nested structure with data array)
+  if (schemaData.attribute?.data && Array.isArray(schemaData.attribute.data)) {
+    schemaData.attribute.data.forEach((attr: any) => {
+      if (attr.name) {
+        attributes.set(attr.name, {
+          name: attr.name,
+          type: attr.type || attr.attributeType || 'unknown',
+          description: attr.description || attr.attributeDescription,
+        });
+      }
+    });
+  }
+  
+  return Array.from(attributes.values());
 }
 
 export async function createVerificationPrograms(args: z.infer<typeof CreateProgramsArgsSchema>) {
@@ -89,7 +136,9 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
 
   const issuerDid = session.get('issuerDid');
   if (!issuerDid) {
-    throw new Error('No issuer DID found in session. Please authenticate first.');
+    throw new Error(
+      'No issuer DID found in session. When using the dashboard AI Assistant, your session should include issuer DID—try refreshing the dashboard page or logging out and back in to refresh your session. When using the MCP server directly, re-connect and authenticate with credential_authenticate.'
+    );
   }
 
   const issuerId = session.get('issuerId');
@@ -99,6 +148,8 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
   // Fetch schema by ID so zkQuery uses correct type and context (required for backend validation)
   let schemaType = session.get('schemaType');
   let schemaContext = session.get('schemaContext') || 'https://www.w3.org/2018/credentials/v1';
+  let validAttributes: SchemaAttribute[] = [];
+  
   try {
     const schemeRes = await apiRequest<unknown>(
       'POST',
@@ -109,6 +160,14 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
     const schemaData = (schemeRes as any).data as SchemeByIdData | undefined;
     if (schemaData) {
       schemaType = schemaType ?? schemaData.schemeType;
+      
+      // Extract valid attributes from schema with their types
+      validAttributes = extractSchemaAttributes(schemaData);
+      if (validAttributes.length > 0) {
+        const attrInfo = validAttributes.map((a) => `${a.name} (${a.type})`).join(', ');
+        console.log('[DEBUG] Schema attributes:', attrInfo);
+      }
+      
       // Prefer JSON-LD context URL from API, then schema URL, then build from dstorage ID
       if (schemaData.schemeAttributes?.uris?.jsonLdContext) {
         schemaContext = schemaData.schemeAttributes.uris.jsonLdContext;
@@ -130,30 +189,63 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
 
   console.log('[DEBUG] Using schemaType:', schemaType, 'schemaContext:', schemaContext?.slice(0, 60) + (schemaContext && schemaContext.length > 60 ? '...' : ''));
 
+  // Validate program conditions reference valid schema attributes
+  const validationErrors: string[] = [];
+  for (const program of programs) {
+    for (const condition of program.conditions) {
+      if (validAttributes.length > 0 && !validAttributes.some((a) => a.name === condition.attribute)) {
+        validationErrors.push(
+          `Program "${program.programName}": attribute "${condition.attribute}" does not exist in schema.`
+        );
+      }
+    }
+  }
+  
+  if (validationErrors.length > 0) {
+    // Format available attributes with types for the error message
+    const attributeList =
+      validAttributes.length > 0
+        ? validAttributes.map((a) => `  - ${a.name} (type: ${a.type})`).join('\n')
+        : '  (No attributes found)';
+    
+    const fullError =
+      'Program validation failed:\n' +
+      validationErrors.join('\n') +
+      '\n\nAvailable attributes in schema:\n' +
+      attributeList +
+      '\n\nExample: Use attribute="label" operator="=" value="test" for a string attribute.';
+    
+    throw new Error(fullError);
+  }
+
   const createdPrograms: Array<{ programId: string; programName: string }> = [];
   const errors: Array<{ programName: string; error: string }> = [];
 
   for (const program of programs) {
     try {
-      const credentialSubject = buildCredentialSubjectQuery(program.conditions);
-      const zkQueryPayload = {
-        circuitId: 'credentialAtomicQueryMTPV2OnChain',
-        query: {
-          skipClaimRevocationCheck: true,
-          allowedIssuers: [issuerDid],
-          context: schemaContext,
-          type: schemaType,
-          credentialSubject,
-        },
-      };
-
-      const zkQueryPayloadStr = JSON.stringify(zkQueryPayload);
-
-      const firstCondition = program.conditions[0];
-      const zkQueryName =
-        firstCondition != null
-          ? generateZkQueryName(firstCondition.attribute, firstCondition.value)
-          : program.programName;
+      // One zkQuery per condition (match dashboard): each zkQuery has credentialSubject with a single key.
+      const zkQueryInfoVOSPayload = program.conditions.map((condition) => {
+        const credentialSubject = buildSingleConditionCredentialSubject(condition);
+        const zkQueryPayload = {
+          circuitId: 'credentialAtomicQueryMTPV2OnChain',
+          query: {
+            skipClaimRevocationCheck: true,
+            allowedIssuers: [issuerDid],
+            context: schemaContext,
+            type: schemaType,
+            credentialSubject,
+          },
+        };
+        const zkQueryPayloadStr = JSON.stringify(zkQueryPayload);
+        const zkQueryName = generateZkQueryName(condition.attribute, condition.value);
+        return {
+          zkQueryName,
+          zkQueryPayload: zkQueryPayloadStr,
+          schemeId: schemaId,
+          zkQueryStatus: 'DRAFT' as const,
+          circuitId: 'credentialAtomicQueryMTPV2OnChain',
+        };
+      });
 
       const programData = {
         verifierProgramInfoVO: {
@@ -164,19 +256,14 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
           complianceAccessKeyRequired: 0,
           issuerDids: [{ did: issuerDid, pricingId: null }],
         },
-        zkQueryInfoVOS: [
-          {
-            zkQueryName,
-            zkQueryPayload: zkQueryPayloadStr,
-            schemeId: schemaId,
-            zkQueryStatus: 'DRAFT',
-            circuitId: 'credentialAtomicQueryMTPV2OnChain',
-          },
-        ],
+        zkQueryInfoVOS: zkQueryInfoVOSPayload,
       };
 
-      console.log(`[DEBUG] Creating program: ${program.programName}`);
-      console.log('[DEBUG] zkQueryPayload.query (type, context, credentialSubject):', JSON.stringify({ type: schemaType, context: schemaContext, credentialSubject }, null, 2));
+      console.log(`[DEBUG] Creating program: ${program.programName} (${program.conditions.length} condition(s), ${zkQueryInfoVOSPayload.length} zkQuery(s))`);
+      program.conditions.forEach((c, i) => {
+        const cs = buildSingleConditionCredentialSubject(c);
+        console.log(`[DEBUG] zkQuery[${i}] credentialSubject:`, JSON.stringify(cs));
+      });
       console.log('[DEBUG] Full program request body:', JSON.stringify(programData, null, 2));
 
       // Program create: dashboard sends only x-verifier-id (no x-issuer-id)

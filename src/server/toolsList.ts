@@ -1,34 +1,5 @@
 export const TOOLS_LIST = [
   {
-    name: 'credential_authenticate',
-    description:
-      'Authenticate after you have credentials. Use (1) privateKey (or CREDENTIAL_MCP_PRIVATE_KEY) for direct auth, or (2) the signed result from the signer page: pass credentialsJson (full JSON from signer) or walletAddress + signature + timestamp. If the user gives ONLY a wallet address and no private key, do NOT call this yet—call credential_get_login_challenge first to get the signer URL, then credential_authenticate with the signed JSON.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        credentialsJson: { type: 'string' as const, description: 'Full JSON from the signer page (environment, walletAddress, signature, timestamp). Paste the copied JSON here to authenticate in one step. Overrides individual fields if both are provided.' },
-        privateKey: { type: 'string' as const, description: 'Ethereum wallet private key (omit when using message-signing; can use CREDENTIAL_MCP_PRIVATE_KEY env instead)' },
-        environment: { type: 'string' as const, enum: ['development', 'staging', 'production'], default: 'staging', description: 'Target environment' },
-        walletAddress: { type: 'string' as const, description: 'For message-signing: wallet address from signer page output (only use together with signature and timestamp from signer)' },
-        signature: { type: 'string' as const, description: 'For message-signing: signature from signer page output' },
-        timestamp: { description: 'For message-signing: timestamp in ms from signer page (number or string)', oneOf: [{ type: 'number' as const }, { type: 'string' as const }] },
-      },
-    },
-  },
-  {
-    name: 'credential_get_login_challenge',
-    description:
-      'Recommended first step when user wants to authenticate with a wallet address (no private key). Call this with the user\'s wallet address to get a one-time signerUrl and login message. User opens signerUrl in a browser, signs with their wallet, then copies the JSON and you call credential_authenticate with that JSON (or credentialsJson). Use this whenever the user provides only a wallet address for auth.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        walletAddress: { type: 'string' as const, description: 'Ethereum wallet address (0x...) that will sign the message' },
-        environment: { type: 'string' as const, enum: ['staging', 'production'], default: 'staging', description: 'API environment' },
-      },
-      required: ['walletAddress'] as const,
-    },
-  },
-  {
     name: 'credential_create_schema',
     description: 'Create and publish a new credential schema with specified data points. Returns schema ID for use in pricing and program creation.',
     inputSchema: {
@@ -53,16 +24,6 @@ export const TOOLS_LIST = [
         version: { type: 'string' as const, default: '1.0', description: 'Schema version' },
       },
       required: ['schemaName', 'schemaType', 'dataPoints'] as const,
-    },
-  },
-  {
-    name: 'credential_verify_schema_published',
-    description: 'Verify that a schema is published to OSS and accessible. Use this before creating programs to ensure the schema is ready.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        schemaId: { type: 'string' as const, description: 'The schema ID to verify (optional, uses current session schemaId if not provided)' },
-      },
     },
   },
   {

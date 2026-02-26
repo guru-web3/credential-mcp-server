@@ -68,7 +68,7 @@ function setChatCors(req: express.Request, res: express.Response): void {
     res.setHeader('Access-Control-Allow-Origin', CORS_ORIGINS[0]);
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-dashboard-auth, x-issuer-id, x-verifier-id, x-api-url');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-dashboard-auth, x-issuer-id, x-issuer-did, x-verifier-id, x-api-url');
 }
 
 app.options('/chat', (req, res) => {
@@ -92,12 +92,14 @@ app.post('/chat', (req, res) => {
   }
 
   const issuerId = (req.headers['x-issuer-id'] as string)?.trim() ?? '';
+  const issuerDid = (req.headers['x-issuer-did'] as string)?.trim() || undefined;
   const verifierId = (req.headers['x-verifier-id'] as string)?.trim() ?? '';
   const apiUrl = (req.headers['x-api-url'] as string)?.trim() || undefined;
 
   const authFromHeaders: ChatAuthFromHeaders = {
     dashboardToken,
     issuerId: issuerId || undefined,
+    issuerDid: issuerDid || undefined,
     verifierId: verifierId || undefined,
     environment: 'staging',
   };
