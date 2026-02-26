@@ -99,13 +99,45 @@ function findTemplateById(
   });
 }
 
+async function fetchIssuerDid(issuerId: string): Promise<string | undefined> {
+  try {
+    const res = await apiRequest<{ partnerId?: string; did?: string; issuerDid?: string }>(
+      'GET',
+      '/management/issuer/queryById',
+      { issuerId },
+      { 'x-issuer-id': issuerId }
+    );
+    const data = res.data;
+    return data?.did || data?.issuerDid || undefined;
+  } catch {
+    // If fetching issuer info fails, return undefined and let caller handle
+    return undefined;
+  }
+}
+
 export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
   session.requireAuth();
 
   const partnerId = session.get('partnerId');
-  const issuerDid = session.get('issuerDid');
-  if (!partnerId || !issuerDid) {
-    throw new Error('Session missing partnerId or issuerDid. Re-authenticate with credential_authenticate.');
+  let issuerDid = session.get('issuerDid');
+  const issuerId = session.get('issuerId');
+  
+  if (!partnerId) {
+    throw new Error('Session missing partnerId. Re-authenticate with credential_authenticate.');
+  }
+
+  // If issuerDid is missing from session, try to fetch it from the API
+  if (!issuerDid && issuerId) {
+    console.log('[DEBUG] issuerDid missing from session, attempting to fetch from API...');
+    issuerDid = await fetchIssuerDid(issuerId);
+    if (issuerDid) {
+      session.set('issuerDid', issuerDid);
+      console.log('[DEBUG] Successfully fetched issuerDid from API');
+    }
+  }
+
+  if (!issuerDid) {
+    throw new Error('Session missing issuerDid. Re-authenticate with credential_authenticate or check that the API returns issuerDid.');
   }
 
   const requestedId = args?.credentialTemplateId ?? session.get('credentialTemplateId');

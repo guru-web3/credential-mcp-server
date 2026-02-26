@@ -36,6 +36,26 @@ const clientsStore: OAuthRegisteredClientsStore = {
     const dynamic = dynamicClients.get(clientId);
     if (dynamic) return dynamic;
     if (clientId === 'cursor') return cursorClient;
+    
+    // Auto-register unknown clients (e.g., VS Code dynamic auth)
+    // This allows VS Code's generated UUIDs to work seamlessly
+    if (process.env.NODE_ENV !== 'production') {
+      const vscodeClient: OAuthClientInformationFull = {
+        client_id: clientId,
+        redirect_uris: [
+          'https://vscode.dev/redirect',
+          'https://vscode.dev/*',
+          'vscode://localhost:3749/authorize',
+          'vscode://dynamic-auth-provider/localhost:3749/authorize',
+          'vscode://localhost:3749/*',
+          ...getRedirectUris(),
+        ],
+        client_id_issued_at: Math.floor(Date.now() / 1000),
+      };
+      dynamicClients.set(clientId, vscodeClient);
+      return vscodeClient;
+    }
+    
     return undefined;
   },
 

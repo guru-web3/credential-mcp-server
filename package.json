@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "tsc && chmod +x bin/credential-mcp.js bin/credential-mcp-http.js",
+    "run:server": "pnpm run build && node dist/httpServer.js",
     "watch": "tsc --watch",
     "prepare": "npm run build",
     "test": "node --test tests/*.js",
@@ -17,8 +18,7 @@
     "extract-zephyr": "node scripts/extract-zephyr-scenarios.js",
     "inspector": "npx @modelcontextprotocol/inspector node dist/index.js",
     "signer": "npx -y serve static -p 3747",
-    "signer:next": "cd signer-app && npm run build && npx -y serve out -p 3748",
-    "start:http": "node dist/httpServer.js"
+    "signer:next": "cd signer-app && npm run build && npx -y serve out -p 3748"
   },
   "keywords": [
     "mcp",

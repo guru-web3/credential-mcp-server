@@ -125,6 +125,12 @@ Timestamp: ${isoTimestamp}`;
     }
 
     const { dashboardToken, issuerId, issuerDid, partnerId, verifierId, verifierDid } = resp.data;
+    
+    // Log available fields in response
+    console.log('[DEBUG] Available fields in login response:', Object.keys(resp.data).join(', '));
+    if (!issuerDid) {
+      console.warn('[DEBUG] ⚠️ issuerDid not found in API response. Will attempt to fetch from issuer profile endpoint.');
+    }
 
     session.set('dashboardToken', dashboardToken);
     session.set('issuerId', issuerId);

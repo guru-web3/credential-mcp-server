@@ -24,7 +24,13 @@ export const CreateCredentialTemplateArgsSchema = z.object({
     return new Date(data.accessibleEndAt) > new Date(data.accessibleStartAt);
   },
   { message: 'accessibleEndAt must be after accessibleStartAt when both are set', path: ['accessibleEndAt'] }
-);
+).transform((data) => {
+  // Ensure issueMax is never 0 or negative; default to null if it is
+  if (data.issueMax !== null && typeof data.issueMax === 'number' && data.issueMax <= 0) {
+    data.issueMax = null;
+  }
+  return data;
+});
 
 interface SchemeByIdResponse {
   schemeId: string;
