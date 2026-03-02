@@ -80,7 +80,7 @@ export async function configureIssuerJwks(args: ConfigureIssuerJwksArgs): Promis
   allowedDomains?: string[];
   error?: string;
 }> {
-  session.requireAuth();
+  await session.requireAuth();
 
   const issuerId = session.get('issuerId');
   if (!issuerId) {

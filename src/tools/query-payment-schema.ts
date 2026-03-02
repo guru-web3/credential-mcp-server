@@ -21,7 +21,7 @@ function generatePaymentHeaders(dashboardToken: string, issuerId: string): Recor
 }
 
 export async function queryPaymentSchema(schemaId?: string): Promise<any> {
-  session.requireAuth();
+  await session.requireAuth();
 
   const credentialSchemaId = schemaId || session.get('schemaId');
   const partnerId = session.get('partnerId');

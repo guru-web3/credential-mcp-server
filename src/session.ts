@@ -1,4 +1,5 @@
 import { SessionState } from './types.js';
+import { tryKeyBasedLogin } from './auth/keyAuth.js';
 
 /**
  * Session management for MCP server
@@ -50,10 +51,17 @@ class Session {
     return urls[env as keyof typeof urls] || urls.staging;
   }
 
-  requireAuth(): void {
-    if (!this.isAuthenticated()) {
-      throw new Error('Not authenticated. Please use the authenticate tool first.');
+  /** Ensures session is authenticated. If not, tries key-based login when CREDENTIAL_MCP_PRIVATE_KEY or CREDENTIAL_MCP_SEED_PHRASE is set. */
+  async requireAuth(): Promise<void> {
+    if (this.isAuthenticated()) return;
+    try {
+      const env = (process.env.CREDENTIAL_MCP_ENVIRONMENT as 'staging' | 'production') || 'staging';
+      const loggedIn = await tryKeyBasedLogin(env);
+      if (loggedIn && this.isAuthenticated()) return;
+    } catch (e) {
+      console.error('[DEBUG] Auto key-based login failed:', (e as Error).message);
     }
+    throw new Error('Not authenticated. Please use the authenticate tool first.');
   }
 }
 

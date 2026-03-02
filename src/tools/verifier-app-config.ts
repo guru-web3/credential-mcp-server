@@ -14,7 +14,7 @@ export const VerifierAppConfigArgsSchema = z.object({
 export type VerifierAppConfigArgs = z.infer<typeof VerifierAppConfigArgsSchema>;
 
 export async function getVerifierAppConfig(args: VerifierAppConfigArgs) {
-  session.requireAuth();
+  await session.requireAuth();
 
   const partnerId = session.get('partnerId');
   if (!partnerId) {

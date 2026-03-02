@@ -33,6 +33,10 @@ const SNakeToCamel: Record<string, string> = {
   wallet_address: 'walletAddress',
   credentials_json: 'credentialsJson',
   private_key: 'privateKey',
+  verifier_address: 'verifierAddress',
+  issuer_address: 'issuerAddress',
+  amount_usd: 'amountUsd',
+  amount_moca: 'amountMoca',
 };
 
 function snakeToCamel(key: string): string {
@@ -112,6 +116,26 @@ export function normalizeToolArgs(toolName: string, args: Raw): Raw {
     case 'credential_template_info':
     case 'credential_app_steps':
       return { ...raw, appType: pickFirst(raw.appType, raw.app_type) };
+    case 'credential_set_price':
+      return {
+        ...raw,
+        paymentFeeSchemaId: pickFirst(raw.paymentFeeSchemaId, raw.payment_fee_schema_id),
+        priceUsd: pickFirst(raw.priceUsd, raw.price_usd),
+      };
+    case 'credential_payment_deposit':
+    case 'credential_payment_withdraw':
+      return {
+        ...raw,
+        verifierAddress: pickFirst(raw.verifierAddress, raw.verifier_address),
+        amountUsd: pickFirst(raw.amountUsd, raw.amount_usd),
+      };
+    case 'credential_payment_claim_fees':
+      return { ...raw, issuerAddress: pickFirst(raw.issuerAddress, raw.issuer_address) };
+    case 'credential_stake_moca':
+    case 'credential_unstake_moca':
+      return { ...raw, amountMoca: pickFirst(raw.amountMoca, raw.amount_moca) };
+    case 'credential_claim_unstake_moca':
+      return raw;
     default:
       return raw;
   }

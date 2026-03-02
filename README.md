@@ -251,7 +251,7 @@ Same flow for verifier: `credential_template_info` (verifier), `credential_verif
 
 ## On-chain actions (signer app and dashboard)
 
-These require a wallet; the MCP server cannot sign transactions.
+When the MCP server does **not** have a chain wallet in env (see below), these actions require a wallet in the browser:
 
 | Action | Where | What |
 |--------|--------|------|
@@ -260,6 +260,20 @@ These require a wallet; the MCP server cannot sign transactions.
 | **Withdraw / claim fees** | Credential Dashboard only | Payout page: withdraw (verifier) or claim fees (issuer) via payments controller contract. Not exposed in the signer app. |
 
 The signer app supports **Set schema price** so you can complete the on-chain step after `credential_setup_pricing` (which only registers schema + pricing model + CAK with the API). Configure the signer with `NEXT_PUBLIC_PAYMENT_CHAIN_ID` and `NEXT_PUBLIC_PAYMENT_CONTROLLER_ADDRESS` (see `signer-app/.env.example`).
+
+### On-chain tools (private key in env)
+
+If you set **CREDENTIAL_MCP_PRIVATE_KEY** or **CREDENTIAL_MCP_SEED_PHRASE** (and chain env: **MOCA_RPC_URL**, **MOCA_CHAIN_ID**, **MOCA_PAYMENTS_CONTRACT**, optionally **MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS**) in the MCP server env (e.g. in Cursor MCP settings `env`), the server can perform on-chain operations without the user opening the signer or dashboard. When either key env is set, the server **auto-authenticates** on first use (e.g. when you run `credential_setup_pricing` or `credential_list_schemas`), so you do not need to call the authenticate tool or complete OAuth first.
+
+- **credential_setup_pricing** with `priceUsd` > 0 will set the price on-chain automatically and return `txHash` (no `setPriceUrl` needed).
+- **credential_set_price** – Set or update verification price on-chain (createSchema / updateSchemaFee).
+- **credential_payment_deposit** – Verifier top-up (deposit USD8).
+- **credential_payment_withdraw** – Verifier withdraw USD8.
+- **credential_payment_claim_fees** – Issuer claim fees.
+- **credential_stake_moca** – Stake native MOCA for issuer usage quota (tiers).
+- **credential_unstake_moca** – Initiate unstake; after delay use **credential_claim_unstake_moca** with the claimable timestamp(s).
+
+**Security:** Use a dedicated, low-value wallet for MCP. Never commit private keys or seed phrases. Set them only in the MCP client `env` (e.g. Cursor → Settings → MCP → your server → env).
 
 ---
 
@@ -306,6 +320,7 @@ See [docs/test-scenarios.md](docs/test-scenarios.md) for Zephyr scenario mapping
 
 - **MCP server:** No env vars are required for basic use (STDIO). Environment (staging/production) and API URLs are set when you authenticate. For the **HTTP server** (OAuth): `MCP_OAUTH_BASE_URL`, `MCP_OAUTH_JWT_SECRET`, `MCP_OAUTH_REDIRECT_URIS`, `MCP_HTTP_PORT`, and `CREDENTIAL_SIGNER_URL` (see [Deploy option 3](#deploy-option-3-remote-http-server-with-oauth-needs-authentication-in-cursor)).
 - **Signer URL:** For the HTTP server OAuth flow, set **`CREDENTIAL_SIGNER_URL`** to your signer app URL (e.g. `https://your-signer.netlify.app`). If unset, the default is `https://credential-challenge-signer.netlify.app` (for local `npm run signer`).
+- **On-chain tools (optional):** To enable set price, payment deposit/withdraw/claim, and MOCA stake/unstake from the MCP without UI, set in MCP `env`: **CREDENTIAL_MCP_PRIVATE_KEY** or **CREDENTIAL_MCP_SEED_PHRASE**; **MOCA_RPC_URL**; **MOCA_CHAIN_ID**; **MOCA_PAYMENTS_CONTRACT**; optionally **MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS** (default staging: `0x238e4AA1a6CF2A774079E73019402Beb03F3a7b5`). Optional **CREDENTIAL_MCP_ACCOUNT_INDEX** for seed phrase (default 0). Use a dedicated wallet; never commit keys.
 
 ---
 
@@ -490,3 +505,13 @@ Replace `YOUR_SCHEMA_ID` if you know it:
 Use animoca-credentials MCP if found. I have schema ID YOUR_SCHEMA_ID. Find an issuance program for this schema, then set up the issuance app: clone the template, generate .env.local with credential_issuance_app_config, generate-keys, run dev, tunnel (npx instatunnel 3000), configure JWKS with the tunnel URL (after both app and tunnel are running), open http://localhost:3000 to test. Use the built-in mock; add a TODO in app/(home)/api/user/user-data/route.ts for a real API later.
 ```
 
+
+Sample prompts
+“Set verification price to 0.1 USD on-chain.”
+“Set up pricing for my last schema: pay on success with 0.2 USD.”
+“Deposit 10 USD8 for verifier 0xVERIFIER_ADDRESS.”
+“Withdraw 5 USD8 for verifier 0xVERIFIER_ADDRESS.”
+“Claim fees for issuer 0xISSUER_ADDRESS.”
+“Stake 10 MOCA for issuer usage quota.”
+“Initiate unstake of 5 MOCA.”
+“Claim unstaked MOCA for timestamps [1234567890].” (after delay)

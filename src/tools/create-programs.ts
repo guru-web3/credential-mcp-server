@@ -82,7 +82,7 @@ interface SchemeByIdData {
 }
 
 export async function createVerificationPrograms(args: z.infer<typeof CreateProgramsArgsSchema>) {
-  session.requireAuth();
+  await session.requireAuth();
 
   const { schemaId: providedSchemaId, deploy: shouldDeploy, programs } = args;
 

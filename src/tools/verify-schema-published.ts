@@ -22,7 +22,7 @@ export const verifySchemaPublishedTool = {
 };
 
 export async function verifySchemaPublished(args: z.infer<typeof VerifySchemaPublishedArgsSchema>) {
-  session.requireAuth();
+  await session.requireAuth();
 
   const issuerId = session.get('issuerId');
   if (!issuerId) {

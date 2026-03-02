@@ -17,6 +17,23 @@ import { getIssuanceAppConfig, IssuanceAppConfigArgsSchema } from '../tools/issu
 import { getVerifierAppConfig, VerifierAppConfigArgsSchema } from '../tools/verifier-app-config.js';
 import { getAppSteps, AppStepsArgsSchema } from '../tools/app-steps.js';
 import { configureIssuerJwks, ConfigureIssuerJwksArgsSchema } from '../tools/configure-issuer-jwks.js';
+import { setPrice, SetPriceArgsSchema } from '../tools/set-price.js';
+import {
+  paymentDeposit,
+  paymentWithdraw,
+  paymentClaimFees,
+  PaymentDepositArgsSchema,
+  PaymentWithdrawArgsSchema,
+  PaymentClaimFeesArgsSchema,
+} from '../tools/payment-onchain.js';
+import {
+  stakeMoca,
+  unstakeMoca,
+  claimUnstakeMoca,
+  StakeMocaArgsSchema,
+  UnstakeMocaArgsSchema,
+  ClaimUnstakeMocaArgsSchema,
+} from '../tools/staking-onchain.js';
 
 /** MCP tool list item (name, description, inputSchema). */
 export type ToolListEntry = {
@@ -278,6 +295,105 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
     },
     schema: ConfigureIssuerJwksArgsSchema,
     handler: (args) => configureIssuerJwks(ConfigureIssuerJwksArgsSchema.parse(args)),
+  },
+  {
+    name: 'credential_set_price',
+    description:
+      'Set verification price on-chain (create new fee schema or update existing). Requires MCP env: CREDENTIAL_MCP_PRIVATE_KEY or CREDENTIAL_MCP_SEED_PHRASE, MOCA_RPC_URL, MOCA_CHAIN_ID, MOCA_PAYMENTS_CONTRACT.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        paymentFeeSchemaId: { type: 'string' as const, description: 'Existing payment fee schema ID (bytes32 hex). Omit to create a new one.' },
+        priceUsd: { type: 'number' as const, description: 'Price in USD (e.g. 0.1 for $0.10)' },
+      },
+      required: ['priceUsd'] as const,
+    },
+    schema: SetPriceArgsSchema,
+    handler: (args) => setPrice(SetPriceArgsSchema.parse(args)),
+  },
+  {
+    name: 'credential_payment_deposit',
+    description: 'Verifier top-up: deposit USD8 to verifier balance on-chain. Requires chain wallet env.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        verifierAddress: { type: 'string' as const, description: 'Verifier address (asset manager) to top up' },
+        amountUsd: { type: 'number' as const, description: 'Amount in USD (USD8)' },
+      },
+      required: ['verifierAddress', 'amountUsd'] as const,
+    },
+    schema: PaymentDepositArgsSchema,
+    handler: (args) => paymentDeposit(PaymentDepositArgsSchema.parse(args)),
+  },
+  {
+    name: 'credential_payment_withdraw',
+    description: 'Verifier withdraw: withdraw USD8 from verifier balance on-chain. Requires chain wallet env.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        verifierAddress: { type: 'string' as const, description: 'Verifier address (asset manager) to withdraw from' },
+        amountUsd: { type: 'number' as const, description: 'Amount in USD (USD8) to withdraw' },
+      },
+      required: ['verifierAddress', 'amountUsd'] as const,
+    },
+    schema: PaymentWithdrawArgsSchema,
+    handler: (args) => paymentWithdraw(PaymentWithdrawArgsSchema.parse(args)),
+  },
+  {
+    name: 'credential_payment_claim_fees',
+    description: 'Issuer claim fees on-chain. Requires chain wallet env.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        issuerAddress: { type: 'string' as const, description: 'Issuer address (asset manager) to claim fees for' },
+      },
+      required: ['issuerAddress'] as const,
+    },
+    schema: PaymentClaimFeesArgsSchema,
+    handler: (args) => paymentClaimFees(PaymentClaimFeesArgsSchema.parse(args)),
+  },
+  {
+    name: 'credential_stake_moca',
+    description: 'Stake native MOCA for issuer usage quota (tiers). Requires chain wallet env. Respects MAX_SINGLE_STAKE_AMOUNT.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        amountMoca: { type: 'string' as const, description: 'Amount of MOCA to stake (e.g. "10" for 10 MOCA)' },
+      },
+      required: ['amountMoca'] as const,
+    },
+    schema: StakeMocaArgsSchema,
+    handler: (args) => stakeMoca(StakeMocaArgsSchema.parse(args)),
+  },
+  {
+    name: 'credential_unstake_moca',
+    description: 'Initiate unstake of MOCA. After UNSTAKE_DELAY, use credential_claim_unstake_moca with the claimable timestamp(s). Requires chain wallet env.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        amountMoca: { type: 'string' as const, description: 'Amount of MOCA to initiate unstake for' },
+      },
+      required: ['amountMoca'] as const,
+    },
+    schema: UnstakeMocaArgsSchema,
+    handler: (args) => unstakeMoca(UnstakeMocaArgsSchema.parse(args)),
+  },
+  {
+    name: 'credential_claim_unstake_moca',
+    description: 'Claim MOCA after unstake delay. Pass array of claimable timestamps from prior initiateUnstake. Requires chain wallet env.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        timestamps: {
+          type: 'array' as const,
+          items: { type: 'number' as const },
+          description: 'Array of claimable timestamps (from UnstakeInitiated event)',
+        },
+      },
+      required: ['timestamps'] as const,
+    },
+    schema: ClaimUnstakeMocaArgsSchema,
+    handler: (args) => claimUnstakeMoca(ClaimUnstakeMocaArgsSchema.parse(args)),
   },
 ];
 

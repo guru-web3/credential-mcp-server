@@ -54,7 +54,7 @@ export const CreateSchemaArgsSchema = z
   );
 
 export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>) {
-  session.requireAuth();
+  await session.requireAuth();
 
   const issuerId = session.get('issuerId');
   if (!issuerId) {

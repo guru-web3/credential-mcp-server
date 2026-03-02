@@ -65,7 +65,7 @@ export async function apiRequest<T>(
   data?: any,
   customHeaders?: Record<string, string>
 ): Promise<ApiResponse<T>> {
-  session.requireAuth();
+  await session.requireAuth();
   const client = createApiClient();
   const dashboardToken = session.get('dashboardToken');
 

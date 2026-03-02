@@ -54,7 +54,7 @@ Authentication is done by **connecting** to the MCP server in Cursor (Connect/St
 
 ## credential_setup_pricing
 
-**Purpose:** Configure pricing for a schema. Schema is verified automatically. pricingModel and CAK are stored via API; numeric price (priceUsd) is set on-chain (response includes setPriceUrl when priceUsd > 0).
+**Purpose:** Configure pricing for a schema. Schema is verified automatically. pricingModel and CAK are stored via API; numeric price (priceUsd) is set on-chain. When **chain wallet env** is set (CREDENTIAL_MCP_PRIVATE_KEY or CREDENTIAL_MCP_SEED_PHRASE + MOCA_*), the server sets the price on-chain automatically and returns `txHash`; otherwise the response includes `setPriceUrl` for the user to complete in the signer or dashboard.
 
 **Parameters:**
 
@@ -67,6 +67,22 @@ Authentication is done by **connecting** to the MCP server in Cursor (Connect/St
 | paymentFeeSchemaId         | string  | no       | Omit to use default USD8. |
 
 **Example trigger:** "Set pricing for this schema to pay on success with 0.1 USD per verification."
+
+---
+
+## On-chain tools (require chain wallet env)
+
+These tools require **CREDENTIAL_MCP_PRIVATE_KEY** or **CREDENTIAL_MCP_SEED_PHRASE** and **MOCA_RPC_URL**, **MOCA_CHAIN_ID**, **MOCA_PAYMENTS_CONTRACT** (and for staking, **MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS**) in the MCP server env. Otherwise they return a clear error.
+
+| Tool | Purpose |
+|------|--------|
+| **credential_set_price** | Set verification price on-chain (createSchema or updateSchemaFee). Params: `priceUsd`, optional `paymentFeeSchemaId`. |
+| **credential_payment_deposit** | Verifier top-up: deposit USD8. Params: `verifierAddress`, `amountUsd`. |
+| **credential_payment_withdraw** | Verifier withdraw USD8. Params: `verifierAddress`, `amountUsd`. |
+| **credential_payment_claim_fees** | Issuer claim fees. Params: `issuerAddress`. |
+| **credential_stake_moca** | Stake native MOCA for issuer tiers. Params: `amountMoca` (e.g. `"10"`). Respects MAX_SINGLE_STAKE_AMOUNT. |
+| **credential_unstake_moca** | Initiate unstake. Params: `amountMoca`. After UNSTAKE_DELAY, use credential_claim_unstake_moca. |
+| **credential_claim_unstake_moca** | Claim MOCA after unstake delay. Params: `timestamps` (array of claimable timestamps from UnstakeInitiated events). |
 
 ---
 

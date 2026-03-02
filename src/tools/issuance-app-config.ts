@@ -120,7 +120,7 @@ async function fetchIssuerDid(issuerId: string): Promise<string | undefined> {
 }
 
 export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
-  session.requireAuth();
+  await session.requireAuth();
 
   const partnerId = session.get('partnerId');
   let issuerDid = session.get('issuerDid');
