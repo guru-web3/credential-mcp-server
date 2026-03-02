@@ -192,7 +192,7 @@ The AI will pick the right tools and parameters. You don’t need to know tool n
 | *“List my credential templates.”* | `credential_list_templates` |
 | *“List my schemas.”* | `credential_list_schemas` |
 | *“How do I issue and verify credentials in my app?”* | `credential_docs` (issuance + verification steps; aligned with AIR Kit Quickstart 2 & 3, production standards) |
-| *“I want to deploy the issuance app; which repo and branch?”* | `credential_template_info` (issuance; branch mcp/template or sample/passport-age) |
+| *“I want to deploy the issuance app; which repo and branch?”* | `credential_template_info` (issuance; default branch mcp-template or sample/passport-age) |
 | *“Generate .env for my issuance app and tell me how to generate the keys.”* | `credential_issuance_app_config` (after connect; returns snippet + key-generation instructions) |
 | *“Give me the steps to clone, install, and deploy the issuance template.”* | `credential_app_steps` (issuance) |
 
@@ -214,7 +214,7 @@ Authentication is done by **connecting** to the MCP server in Cursor (Connect/St
 | `credential_list_templates` | List issuance programs (templates) for use as credentialId. |
 | `credential_list_programs` | List verification programs for use as programId in verifyCredential. |
 | `credential_docs` | Get issuance and/or verification flow docs; aligned with [Quickstart 2](https://docs.moca.network/airkit/quickstart/issue-credentials) & [Quickstart 3](https://docs.moca.network/airkit/quickstart/verify-credentials), production standards. |
-| `credential_template_info` | Get repo URL, branch, and clone command for issuance or verifier template (no auth). Default issuance branch: `mcp/template`; also `sample/passport-age`. |
+| `credential_template_info` | Get repo URL, branch, and clone command for issuance or verifier template (no auth). Default issuance branch: `mcp-template`; also `sample/passport-age`. |
 | `credential_issuance_app_config` | Generate .env snippet for issuance app from session. Includes instructions to auto-generate PARTNER_PRIVATE_KEY and public key (no manual steps). JWKS kid defaults to partner ID. |
 | `credential_verifier_app_config` | Generate .env snippet for verifier app from session. |
 | `credential_app_steps` | Get ordered steps: clone → install → generate keys + env → dev → build → deploy → set JWKS URL in dashboard. |
@@ -227,7 +227,7 @@ Authentication is done by **connecting** to the MCP server in Cursor (Connect/St
 After creating schemas and programs, you can get the template repo, env config, and a checklist so the AI (or you) can clone, install, generate keys, and deploy with no manual key generation:
 
 1. **“I want to deploy the issuance app”** or **“Set me up with the sample branch.”**  
-2. AI can call `credential_template_info` (appType: `issuance`, optional branch: `mcp/template` or `sample/passport-age`) → repo URL and clone command with branch.  
+2. AI can call `credential_template_info` (appType: `issuance`, default branch: `mcp-template` or optional e.g. `sample/passport-age`) → repo URL and clone command with branch.  
 3. AI calls `credential_issuance_app_config` (after connect) → env snippet and **instructions to auto-generate** PARTNER_PRIVATE_KEY and NEXT_PUBLIC_PARTNER_PUBLIC_KEY (openssl commands); agent runs them and writes .env.local.  
 4. AI calls `credential_app_steps` (appType: `issuance`) → ordered checklist.  
 5. AI runs: clone with branch → install → paste env (with generated keys) → `pnpm dev` → optionally build and deploy.  
@@ -452,3 +452,41 @@ Example credential_create_verification_programs payloads: one program with strin
 Cross-reference: In the same doc, add a short “Dashboard UI ↔ MCP” mapping: e.g. “Verifying on” = chain; “Select a schema” = schemaId; “Schema type” = schemeType; “Pricing model” = pricingModel; “CAK” = complianceAccessKeyEnabled; “Define query” = conditions (attribute, operator, value); “Data type: boolean/string/…” = attribute type when building verification queries.
 
 Optional: A small script (Node or shell) that runs a subset of these as MCP tool calls (e.g. create schema with all four types, then create program, then setup pricing, then create one verification program) for smoke testing; can live in credential-mcp-server/scripts/ and be documented in the same file.
+
+---
+
+## Queries to run (issuance setup)
+
+Copy-paste one of these into Cursor (with the **animoca-credentials** MCP connected) to run the step-wise issuance setup. See [docs/mcp-issuance.md](docs/mcp-issuance.md) and [docs/TOOLS.md](docs/TOOLS.md) for full flow and default behaviors.
+
+**Example 1 – Default (schema created today, full flow with mock)**  
+Use when you have a schema created today and want clone → env → mock → dev → tunnel → JWKS → test:
+
+```
+Use animoca-credentials MCP if found. Query for the schema created today—only one will be there. I want to set up the issuance app: find an issuance program for this schema, then clone the template repo, generate .env.local with credential_issuance_app_config (so dataPoints from the schema are in the config for mocking), run generate-keys and set env. Don't edit the user-data route when you're only mocking. Rely on the template's built-in mock driven by NEXT_PUBLIC_CREDENTIALS_CONFIG and its dataPoints. Mock by type: string → "test", integer/number → 0, boolean → false. Add a TODO for when you plug in a real API later in app/(home)/api/user/user-data/route.ts. Run the app (pnpm dev) on port 3000—kill anything already using that port. Start pnpm tunnel or npx instatunnel 3000. Pick the tunnel URL only after both the app and the tunnel are running. Call credential_configure_issuer_jwks with the tunnel URL (not localhost), then open http://localhost:3000 to test.
+```
+
+**Example 2 – When you have a credential template ID**  
+Replace `YOUR_TEMPLATE_ID` with your issuance program ID:
+
+```
+Use animoca-credentials MCP if found. I have credential template ID YOUR_TEMPLATE_ID. Set up the issuance app: clone the template repo, generate .env.local with credential_issuance_app_config (dataPoints for mocking), run generate-keys and set env. Don't edit the user-data route; use the built-in mock. Run pnpm dev on port 3000 (kill if needed), start npx instatunnel 3000, pick the tunnel URL after both are running, call credential_configure_issuer_jwks with that URL, then open http://localhost:3000 to test.
+```
+
+**Example 3 – Short form (template ID)**  
+```
+Using credential template ID YOUR_TEMPLATE_ID: clone the issuance template, generate .env.local from credential_issuance_app_config, generate-keys, run dev on 3000, npx instatunnel 3000, configure JWKS with the tunnel URL (after both are running), open localhost:3000 to test.
+```
+
+**Example 4 – Just the steps (no schema/template specified)**  
+```
+Set up the credential issuance app end-to-end: clone the template, get .env from credential_issuance_app_config and generate-keys, run dev on port 3000, start the tunnel (npx instatunnel 3000), configure JWKS with the tunnel URL once both are running, then open http://localhost:3000 to test. Use the built-in mock (don't edit user-data route).
+```
+
+**Example 5 – Schema ID only (find program first)**  
+Replace `YOUR_SCHEMA_ID` if you know it:
+
+```
+Use animoca-credentials MCP if found. I have schema ID YOUR_SCHEMA_ID. Find an issuance program for this schema, then set up the issuance app: clone the template, generate .env.local with credential_issuance_app_config, generate-keys, run dev, tunnel (npx instatunnel 3000), configure JWKS with the tunnel URL (after both app and tunnel are running), open http://localhost:3000 to test. Use the built-in mock; add a TODO in app/(home)/api/user/user-data/route.ts for a real API later.
+```
+

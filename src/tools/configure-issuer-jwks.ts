@@ -1,6 +1,6 @@
 /**
  * Configure JWKS URL and whitelist domain in the credential Partner Dashboard in one call.
- * Accepts an origin (e.g. https://localhost:3000 or tunnel URL), derives hostname and JWKS URL,
+ * Accepts an origin (tunnel URL from npx instatunnel; do not use localhost for JWKS), derives hostname and JWKS URL,
  * optionally probes the JWKS endpoint after server is up, then PATCHes partner settings.
  */
 
@@ -18,7 +18,7 @@ export const ConfigureIssuerJwksArgsSchema = z.object({
       u.pathname = u.pathname.replace(/\/+$/, '') || '/';
       return u.origin + u.pathname;
     })
-    .describe('Base URL of the issuance app (e.g. https://localhost:3000 or https://abc.ngrok.io). No trailing slash.'),
+    .describe('Base URL from tunnel: run npx instatunnel 3000, copy the HTTPS URL from the console. Do not use localhost for JWKS. No trailing slash.'),
   probeBeforeUpdate: z
     .boolean()
     .optional()
@@ -54,6 +54,10 @@ async function probeJwksUrl(jwksUrl: string): Promise<{ ok: boolean; error?: str
     const res = await axios.get(jwksUrl, {
       timeout: JWKS_PROBE_TIMEOUT_MS,
       validateStatus: () => true,
+      headers: {
+        'bypass-tunnel-reminder': '1',
+        'User-Agent': 'CredentialMCP-JWKS-Probe/1.0',
+      },
     });
     if (res.status !== 200) {
       return { ok: false, error: `HTTP ${res.status}` };

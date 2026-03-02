@@ -15,20 +15,24 @@ export const IssuanceAppConfigArgsSchema = z.object({
 
 export type IssuanceAppConfigArgs = z.infer<typeof IssuanceAppConfigArgsSchema>;
 
-const KEY_GEN_INSTRUCTIONS = `Partner ID and credentials config are filled. You must generate PARTNER_PRIVATE_KEY and NEXT_PUBLIC_PARTNER_PUBLIC_KEY and add them to .env.local.
+const DEFAULT_REOWN_PROJECT_ID = '9bf1bbff192817bf581a16241732bfb4';
 
-To populate .env.local with no manual steps (secure: keys never in clipboard), run from the issuance template repo root:
+const STRICT_REPLACE_INSTRUCTIONS = `When writing or updating .env.local, strictly replace (overwrite) these three variables every time: NEXT_PUBLIC_REOWN_PROJECT_ID, NEXT_PUBLIC_PARTNER_PUBLIC_KEY, PARTNER_PRIVATE_KEY.`;
+
+const KEY_GEN_INSTRUCTIONS = `Partner ID, JWKS kid, credentials config, and default Reown project ID are filled. Default: if NEXT_PUBLIC_PARTNER_PUBLIC_KEY or PARTNER_PRIVATE_KEY is not given, run pnpm run generate-keys and populate .env.local.
+
+Strict replace: When writing/updating .env.local, strictly replace (overwrite) these three every time: NEXT_PUBLIC_REOWN_PROJECT_ID, NEXT_PUBLIC_PARTNER_PUBLIC_KEY, PARTNER_PRIVATE_KEY.
+
+Option A — Auto (recommended, default when keys not given): Run from the issuance template repo root:
   pnpm run generate-keys
-This appends PARTNER_PRIVATE_KEY, NEXT_PUBLIC_PARTNER_PUBLIC_KEY, and SIGNING_ALGORITHM=ES256 to .env.local (no openssl required).
+This appends PARTNER_PRIVATE_KEY, NEXT_PUBLIC_PARTNER_PUBLIC_KEY, and SIGNING_ALGORITHM=ES256 to .env.local. Use the default NEXT_PUBLIC_REOWN_PROJECT_ID (already in the snippet below).
 
-Alternatively, generate manually:
-1. Generate private key (P-256, PEM body only, single line):
-   openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt | tail -n +2 | head -n -1 | tr -d '\\n'
-2. Set PARTNER_PRIVATE_KEY to the output (no BEGIN/END lines).
-3. Derive public key from private key (paste private key between BEGIN/END for the -in value):
-   openssl ec -in <(echo "-----BEGIN PRIVATE KEY-----"; echo "<PASTE_KEY_BODY>"; echo "-----END PRIVATE KEY-----") -pubout 2>/dev/null | grep -v "BEGIN\\|END" | tr -d '\\n'
-4. Set NEXT_PUBLIC_PARTNER_PUBLIC_KEY to that output. Set SIGNING_ALGORITHM=ES256.
-5. NEXT_PUBLIC_JWKS_KID can be omitted (defaults to NEXT_PUBLIC_PARTNER_ID). JWKS URL after deploy: https://<your-deployed-origin>/jwks.json — set this in the credential Partner Dashboard. After deploy, set JWKS URL in the credential Partner Dashboard to https://<your-origin>/jwks.json.`;
+Option B — Generate and provide: Generate PARTNER_PRIVATE_KEY and NEXT_PUBLIC_PARTNER_PUBLIC_KEY manually (P-256, PEM body only), then set all three in .env.local:
+1. openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt | tail -n +2 | head -n -1 | tr -d '\\n' → PARTNER_PRIVATE_KEY
+2. Derive public key from private key → NEXT_PUBLIC_PARTNER_PUBLIC_KEY. Set SIGNING_ALGORITHM=ES256.
+3. Optionally set NEXT_PUBLIC_REOWN_PROJECT_ID (default is already in the snippet).
+
+JWKS URL after deploy: https://<your-deployed-origin>/jwks.json — set in credential Partner Dashboard.`;
 
 interface SchemeRecord {
   attributeObj?: { data?: Array<{ name?: string }> };
@@ -190,8 +194,11 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
     { did: issuerDid, programId: credentialId, name: credentialName, dataPoints },
   ];
   const envLines = [
-    `# Issuance app env — paste into .env.local`,
+    `# Issuance app env — paste into .env.local. JWKS_KID and REOWN_PROJECT_ID are pre-filled below; do not leave them empty.`,
+    `# Strictly replace only: PARTNER_PRIVATE_KEY, NEXT_PUBLIC_PARTNER_PUBLIC_KEY, NEXT_PUBLIC_REOWN_PROJECT_ID (if overriding).`,
     `NEXT_PUBLIC_PARTNER_ID=${partnerId}`,
+    `NEXT_PUBLIC_JWKS_KID=${partnerId}`,
+    `NEXT_PUBLIC_REOWN_PROJECT_ID=${DEFAULT_REOWN_PROJECT_ID}`,
     `NEXT_PUBLIC_CREDENTIALS_CONFIG=${JSON.stringify(credentialsConfig)}`,
     `NEXT_PUBLIC_APP_NAME=${JSON.stringify(appName)}`,
     `NEXT_PUBLIC_HEADLINE=${JSON.stringify(headline)}`,
@@ -200,23 +207,21 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
     `NEXT_PUBLIC_AUTH_METHOD=wallet`,
     `NEXT_PUBLIC_THEME=system`,
     `SIGNING_ALGORITHM=ES256`,
-    `# NEXT_PUBLIC_JWKS_KID=${partnerId}`,
-    `# PARTNER_PRIVATE_KEY= — generate and paste (see notes)`,
-    `# NEXT_PUBLIC_PARTNER_PUBLIC_KEY= — derive from private key (see notes)`,
-    ``,
-    `# Optional for wallet auth:`,
-    `# NEXT_PUBLIC_REOWN_PROJECT_ID=`,
+    `# PARTNER_PRIVATE_KEY= — run pnpm run generate-keys or paste (see notes)`,
+    `# NEXT_PUBLIC_PARTNER_PUBLIC_KEY= — from generate-keys or derive from private key (see notes)`,
   ];
 
   const envSnippet = envLines.join('\n');
 
   const localTesting = {
     localHttps:
-      'Run `pnpm dev:https` in the template repo; app at https://localhost:3000. Use this JWKS URL only if your validator runs locally.',
+      'Run `pnpm dev` and open http://localhost:3000 in the browser. For JWKS, always use the tunnel URL from the console (never localhost).',
     tunnel:
-      'For testing with the cloud credential API: run `pnpm dev`, then in another terminal run `npx ngrok http 3000` (or cloudflared). Use the tunnel HTTPS URL for JWKS and whitelist.',
+      'For e2e local testing: run `pnpm dev`, then in another terminal run `npx instatunnel 3000`. Copy the HTTPS URL from the console and use it as origin for credential_configure_issuer_jwks. Never use localhost for JWKS. The MCP probe sends bypass-tunnel-reminder when needed.',
     configureTool:
-      'Call credential_configure_issuer_jwks with origin (e.g. https://localhost:3000 or your tunnel URL) to set JWKS URL and whitelist in one step. Use probeBeforeUpdate: true so the tool checks the endpoint after the server is up.',
+      'Call credential_configure_issuer_jwks with origin set to the tunnel URL you copied from the console (from npx instatunnel 3000). Do not use localhost for JWKS. Use probeBeforeUpdate: true so the tool checks the endpoint after the server is up.',
+    noApiMock:
+      'Default when no API given: do not edit app/(home)/api/user/user-data/route.ts. Rely on the built-in mock (NEXT_PUBLIC_CREDENTIALS_CONFIG + dataPoints). Mock by type: string → "test", integer/number → 0, boolean → false. Add a TODO in app/(home)/api/user/user-data/route.ts for plugging in a real API later. See mcp-issuance.md and TOOLS.md "User data and mocking".',
     dashboardSteps:
       'Alternatively, in the credential Partner Dashboard: Settings → General, set JWKS URL to https://<origin>/jwks.json; Settings → Domains, add the hostname.',
     afterDeploy:
@@ -226,7 +231,9 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
   return {
     envSnippet,
     notes: KEY_GEN_INSTRUCTIONS,
-    partnerId,
+    strictReplaceInstructions: STRICT_REPLACE_INSTRUCTIONS,
+    prefilledInSnippet:
+      'The envSnippet already includes NEXT_PUBLIC_JWKS_KID, NEXT_PUBLIC_REOWN_PROJECT_ID, and NEXT_PUBLIC_CREDENTIALS_CONFIG with dataPoints from the schema. Paste the entire snippet into .env.local—do not remove or simplify NEXT_PUBLIC_CREDENTIALS_CONFIG or dataPoints (the template uses them for built-in user-data mocking). Do not leave required fields empty or overwrite with placeholders. Do not echo or repeat any partner ID from this response.',
     issuerDid,
     credentialId,
     credentialName,

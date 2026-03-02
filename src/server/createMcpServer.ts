@@ -2,26 +2,18 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { getRequestAuth } from '../auth/requestContext.js';
 import { setSessionFromAuthInfo } from '../auth/setSessionFromAuthInfo.js';
-import { createSchema, CreateSchemaArgsSchema } from '../tools/create-schema.js';
-import { createCredentialTemplate, CreateCredentialTemplateArgsSchema } from '../tools/create-credential-template.js';
-import { setupPricing, SetupPricingArgsSchema } from '../tools/setup-pricing.js';
-import { createVerificationPrograms, CreateProgramsArgsSchema } from '../tools/create-programs.js';
-import { listCredentialTemplates, ListCredentialTemplatesArgsSchema } from '../tools/list-credential-templates.js';
-import { listVerificationPrograms, ListVerificationProgramsArgsSchema } from '../tools/list-verification-programs.js';
-import { credentialDocs, CredentialDocsArgsSchema } from '../tools/credential-docs.js';
-import { listSchemas, ListSchemasArgsSchema } from '../tools/list-schemas.js';
-import { getTemplateInfo, TemplateInfoArgsSchema } from '../tools/template-info.js';
-import { getIssuanceAppConfig, IssuanceAppConfigArgsSchema } from '../tools/issuance-app-config.js';
-import { getVerifierAppConfig, VerifierAppConfigArgsSchema } from '../tools/verifier-app-config.js';
-import { getAppSteps, AppStepsArgsSchema } from '../tools/app-steps.js';
-import { configureIssuerJwks, ConfigureIssuerJwksArgsSchema } from '../tools/configure-issuer-jwks.js';
-
-import { TOOLS_LIST } from './toolsList.js';
+import { getToolsList, getToolEntry } from './toolRegistry.js';
 import { normalizeToolArgs } from './normalizeToolArgs.js';
+import { listResources, readResource } from '../resources/index.js';
+import { listPrompts, getPrompt } from '../prompts/index.js';
 
 export function createMcpServer(): { server: Server } {
   const server = new Server(
@@ -32,12 +24,14 @@ export function createMcpServer(): { server: Server } {
     {
       capabilities: {
         tools: {},
+        resources: {},
+        prompts: {},
       },
     }
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: TOOLS_LIST,
+    tools: getToolsList(),
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -46,80 +40,27 @@ export function createMcpServer(): { server: Server } {
 
     const { name, arguments: args } = request.params;
     const normalized = normalizeToolArgs(name, (args ?? {}) as Record<string, unknown>);
+    const entry = getToolEntry(name);
+
+    if (!entry) {
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(
+              { success: false, error: `Unknown tool: ${name}`, tool: name },
+              null,
+              2
+            ),
+          },
+        ],
+        isError: true,
+      };
+    }
 
     try {
-      let result: unknown;
-
-      switch (name) {
-        case 'credential_create_schema': {
-          const validated = CreateSchemaArgsSchema.parse(normalized);
-          result = await createSchema(validated);
-          break;
-        }
-        case 'credential_create_program': {
-          const validated = CreateCredentialTemplateArgsSchema.parse(normalized);
-          result = await createCredentialTemplate(validated);
-          break;
-        }
-        case 'credential_setup_pricing': {
-          const validated = SetupPricingArgsSchema.parse(normalized);
-          result = await setupPricing(validated);
-          break;
-        }
-        case 'credential_create_verification_programs': {
-          const validated = CreateProgramsArgsSchema.parse(normalized);
-          result = await createVerificationPrograms(validated);
-          break;
-        }
-        case 'credential_list_templates': {
-          const validated = ListCredentialTemplatesArgsSchema.parse(normalized);
-          result = await listCredentialTemplates(validated);
-          break;
-        }
-        case 'credential_list_programs': {
-          const validated = ListVerificationProgramsArgsSchema.parse(normalized);
-          result = await listVerificationPrograms(validated);
-          break;
-        }
-        case 'credential_docs': {
-          const validated = CredentialDocsArgsSchema.parse(normalized);
-          result = await credentialDocs(validated);
-          break;
-        }
-        case 'credential_list_schemas': {
-          const validated = ListSchemasArgsSchema.parse(normalized);
-          result = await listSchemas(validated);
-          break;
-        }
-        case 'credential_template_info': {
-          const validated = TemplateInfoArgsSchema.parse(normalized);
-          result = await getTemplateInfo(validated);
-          break;
-        }
-        case 'credential_issuance_app_config': {
-          const validated = IssuanceAppConfigArgsSchema.parse(normalized);
-          result = await getIssuanceAppConfig(validated);
-          break;
-        }
-        case 'credential_verifier_app_config': {
-          const validated = VerifierAppConfigArgsSchema.parse(normalized);
-          result = await getVerifierAppConfig(validated);
-          break;
-        }
-        case 'credential_app_steps': {
-          const validated = AppStepsArgsSchema.parse(normalized);
-          result = await getAppSteps(validated);
-          break;
-        }
-        case 'credential_configure_issuer_jwks': {
-          const validated = ConfigureIssuerJwksArgsSchema.parse(normalized);
-          result = await configureIssuerJwks(validated);
-          break;
-        }
-        default:
-          throw new Error(`Unknown tool: ${name}`);
-      }
-
+      const validated = entry.schema.parse(normalized);
+      const result = await entry.handler(validated);
       return {
         content: [
           {
@@ -144,6 +85,33 @@ export function createMcpServer(): { server: Server } {
         isError: true,
       };
     }
+  });
+
+  server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+    resources: listResources(),
+  }));
+
+  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    const uri = request.params.uri;
+    const content = await readResource(uri);
+    if (!content) {
+      const err = new Error(`Resource not found: ${uri}`) as Error & { code?: number };
+      err.code = -32002;
+      throw err;
+    }
+    return {
+      contents: [content],
+    };
+  });
+
+  server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+    prompts: listPrompts(),
+  }));
+
+  server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    const { name, arguments: promptArgs } = request.params;
+    const args = (promptArgs ?? {}) as Record<string, string>;
+    return getPrompt(name, args);
   });
 
   return { server };
