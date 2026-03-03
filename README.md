@@ -25,24 +25,33 @@ Use **natural language** in Cursor (or other MCP clients) to manage AIR credenti
    pnpm run build
    ```
 
-5. **Run the server**
-   - **Cursor (STDIO):** Add this server in Cursor MCP settings. Example config (replace paths with your absolute paths):
-     ```json
-     "animoca-credentials": {
-       "command": "/path/to/node",
-       "args": ["/path/to/credential-mcp-server/dist/index.js"],
-       "env": {}
-     }
-     ```
-     Cursor will spawn the process; it loads `.env` when the working directory is the repo. Or put `CREDENTIAL_MCP_ENVIRONMENT` (and optionally `CREDENTIAL_API_SIGNATURE_KEY`) in the `env` object. See [mcp-config.example.json](mcp-config.example.json).
-   - **HTTP server:** In the repo directory run:
-     ```bash
-     pnpm run run:server
-     ```
-     Then point your MCP client at `http://localhost:3749/mcp` (default port; override with `MCP_HTTP_PORT` in `.env`).
+5. **Run the HTTP server (recommended)**  
+   In the repo directory:
+   ```bash
+   pnpm run run:server
+   ```
+   Default endpoint: `http://localhost:3749/mcp`. Override port with `MCP_HTTP_PORT` in `.env`.
 
-6. **Connect in Cursor**  
-   Click **Connect** or **Start** next to the server. For HTTP, complete the browser sign-in. There are no auth tools to call—session is set by connecting.
+6. **Add the server in Cursor**  
+   In Cursor → Settings → MCP, add a transport that uses the **HTTP** URL. Example (e.g. in `~/.cursor/mcp.json` or Cursor MCP config):
+   ```json
+   "moca-creds": {
+     "url": "http://localhost:3749/mcp",
+     "headers": {
+       "Accept": "application/json, text/event-stream"
+     },
+     "env": {
+       "CREDENTIAL_MCP_ENVIRONMENT": "staging", // production -> testnet
+       "CREDENTIAL_MCP_PRIVATE_KEY": "<64-hex-chars-optional-for-on-chain-tools>"
+     }
+   }
+   ```
+   Use your real env values; never commit the private key. Omit `CREDENTIAL_MCP_PRIVATE_KEY` if you only need schema/program/pricing (no stake, set price, or payments).
+
+7. **Connect in Cursor**  
+   Click **Connect** or **Start** next to the server. For HTTP, complete the browser sign-in if prompted. Session is set by connecting; there are no auth tools to call.
+
+**Alternative (STDIO):** To run the server as a spawned process instead of HTTP, use a `command`/`args` config and point Cursor at `dist/index.js`. See [mcp-config.example.json](mcp-config.example.json).
 
 ---
 
