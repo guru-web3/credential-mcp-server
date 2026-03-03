@@ -7,6 +7,7 @@ import { Wallet, HDNodeWallet } from 'ethers';
 import CryptoJS from 'crypto-js';
 import axios from 'axios';
 import { session } from '../session.js';
+import { getCredentialApiUrl, getEnvironment, type ConfigEnvironment } from '../config.js';
 
 const LOGIN_REQUEST_TIMEOUT_MS = 30_000;
 const ENV_KEY = 'CREDENTIAL_MCP_PRIVATE_KEY';
@@ -47,19 +48,16 @@ function getLoginSigner(): LoginSigner | null {
  * If CREDENTIAL_MCP_PRIVATE_KEY or CREDENTIAL_MCP_SEED_PHRASE is set, sign the login message and call
  * /partner/login, then set session. Returns true if login was performed and succeeded, false if no key.
  * Throws on login API error.
- * Environment defaults to CREDENTIAL_MCP_ENVIRONMENT or 'staging'.
+ * Environment defaults to CREDENTIAL_MCP_ENVIRONMENT (or config_env) or 'staging'.
  */
 export async function tryKeyBasedLogin(
-  environment: 'staging' | 'production' = (process.env.CREDENTIAL_MCP_ENVIRONMENT as 'staging' | 'production') || 'staging'
+  environment: ConfigEnvironment = getEnvironment()
 ): Promise<boolean> {
   const wallet = getLoginSigner();
   if (!wallet) return false;
 
-  const apiUrl =
-    environment === 'production'
-      ? 'https://credential.api.air3.com'
-      : 'https://credential.api.staging.air3.com';
-  session.setEnvironment(environment);
+  const apiUrl = getCredentialApiUrl(environment);
+  session.setConfigEnvironment(environment);
 
   const walletAddress = wallet.address.toLowerCase();
   const date = new Date();
@@ -78,22 +76,37 @@ Timestamp: ${isoTimestamp}`;
     timeout: LOGIN_REQUEST_TIMEOUT_MS,
   });
 
-  const resp = loginResponse.data;
+  const resp = loginResponse.data as { code?: number; data?: Record<string, unknown>; msg?: string; message?: string } | undefined;
   if (!resp || resp.code !== 80000000) {
     const code = resp?.code ?? 'no code';
     const msg = resp?.msg ?? resp?.message ?? '(empty)';
     throw new Error(`Login failed: code=${code} msg=${msg}`);
   }
 
-  const { dashboardToken, issuerId, issuerDid, partnerId, verifierId, verifierDid } = resp.data;
+  const data = resp.data;
+  if (!data || typeof data !== 'object') {
+    throw new Error('Login response missing data. Check API response shape.');
+  }
+
+  const dashboardToken = data.dashboardToken as string | undefined;
+  const issuerId = data.issuerId as string | undefined;
+  const issuerDid = data.issuerDid as string | undefined;
+  const partnerId = data.partnerId as string | undefined;
+  const verifierId = data.verifierId as string | undefined;
+  const verifierDid = data.verifierDid as string | undefined;
+
+  if (!dashboardToken) {
+    throw new Error('Login response missing dashboardToken. Check API response.');
+  }
+
   session.set('dashboardToken', dashboardToken);
-  session.set('issuerId', issuerId);
-  session.set('issuerDid', issuerDid);
-  session.set('partnerId', partnerId);
-  session.set('verifierId', verifierId);
-  session.set('verifierDid', verifierDid);
+  if (issuerId != null) session.set('issuerId', issuerId);
+  if (issuerDid != null) session.set('issuerDid', issuerDid);
+  if (partnerId != null) session.set('partnerId', partnerId);
+  if (verifierId != null) session.set('verifierId', verifierId);
+  if (verifierDid != null) session.set('verifierDid', verifierDid);
   session.set('walletAddress', walletAddress);
 
-  console.log(`[DEBUG] Auto-authenticated with key (partner: ${partnerId})`);
+  console.log(`[DEBUG] Auto-authenticated with key (partner: ${partnerId ?? 'n/a'})`);
   return true;
 }

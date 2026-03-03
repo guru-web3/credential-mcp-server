@@ -3,6 +3,7 @@ import { Wallet } from 'ethers';
 import CryptoJS from 'crypto-js';
 import axios from 'axios';
 import { session } from '../session.js';
+import { getCredentialApiUrl } from '../config.js';
 
 const MAX_CHALLENGE_AGE_MS = 5 * 60 * 1000; // 5 minutes
 const LOGIN_REQUEST_TIMEOUT_MS = 30_000;
@@ -57,13 +58,19 @@ function generateHeaders(body: Record<string, unknown>, timestamp: number): Reco
   };
 }
 
+function toConfigEnvironment(env: string): 'sandbox' | 'staging' | 'production' {
+  const lower = env.toLowerCase();
+  if (lower === 'production' || lower === 'prod') return 'production';
+  if (lower === 'sandbox') return 'sandbox';
+  return 'staging';
+}
+
 export async function authenticate(args: z.infer<typeof AuthenticateArgsSchema>) {
   const { privateKey, environment, walletAddress: argWallet, signature: argSignature, timestamp: argTimestamp } = args;
 
-  const apiUrl = environment === 'production'
-    ? 'https://credential.api.air3.com'
-    : 'https://credential.api.staging.air3.com';
-  session.setEnvironment(environment);
+  const configEnv = toConfigEnvironment(environment);
+  const apiUrl = getCredentialApiUrl(configEnv);
+  session.setConfigEnvironment(configEnv);
 
   let walletAddress: string;
   let signature: string;

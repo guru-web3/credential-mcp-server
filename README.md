@@ -2,6 +2,25 @@
 
 Use **natural language** in Cursor (or other MCP clients) to manage AIR credentials: create schemas, set pricing, create issuance and verification programs, and deploy. No need to remember tool names—just describe what you want.
 
+---
+
+## Private key and on-chain wallet
+
+This repo can use a **private key** (or seed phrase) so the MCP server can perform on-chain actions without opening the signer app or dashboard.
+
+| What | Where | Security |
+|------|--------|----------|
+| **Private key** | Set `CREDENTIAL_MCP_PRIVATE_KEY` in the server env (e.g. `.env` in this repo, or Cursor MCP → your server → **env**). | **Never commit** `.env` or any file containing the key. `.env` is in `.gitignore`. Use a **dedicated, low-value** wallet for MCP only. |
+| **Seed phrase** | Alternatively set `CREDENTIAL_MCP_SEED_PHRASE` (and optionally `CREDENTIAL_MCP_ACCOUNT_INDEX`, default `0`). | Same as above: env only, never commit, dedicated wallet. |
+| **Chain config** | `MOCA_RPC_URL`, `MOCA_CHAIN_ID`, `MOCA_PAYMENTS_CONTRACT`, `MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS`. Auto-set from `CREDENTIAL_MCP_ENVIRONMENT` (aligned with credential-dashboard: devnet for staging/sandbox, testnet for production); override in `.env` if needed. | No secrets; safe to document. |
+
+**Tools that require the private key (or seed):**  
+`credential_set_price`, `credential_setup_pricing` (when `priceUsd` > 0), `credential_payment_deposit`, `credential_payment_withdraw`, `credential_payment_claim_fees`, `credential_stake_moca`, `credential_unstake_moca`, `credential_claim_unstake_moca`.
+
+**Quick setup:** Copy `.env.example` to `.env`, set `CREDENTIAL_MCP_ENVIRONMENT` (e.g. `staging`), and set `CREDENTIAL_MCP_PRIVATE_KEY` to your wallet’s private key (64 hex chars, with or without `0x`). Do not commit `.env`.
+
+---
+
 ### For AI / models (instructions)
 
 - **Authentication:** There are no auth tools. The user must **connect** to the MCP server (Cursor: click **Connect** or **Start** next to the server). For HTTP transport, they complete the browser sign-in. Session (issuerId, verifierId, tokens) is set from that; do not suggest calling any "credential_authenticate" or "credential_get_login_challenge" tool.
@@ -94,6 +113,9 @@ To get **standard MCP login** like Figma or Slack—Cursor shows **"Needs authen
    For a deployed server, use your HTTPS URL, e.g. `"url": "https://your-mcp-host.com/mcp"`.
 
 4. **Connect**: In Cursor, click **Connect** (or **Start**) next to the server. Cursor will open a browser; sign in with your wallet on the signer page, paste the JSON, and you’re authenticated. The Bearer token is sent on every request; there is no separate auth tool to call.
+
+**Key-based auth (no "Needs authentication")**  
+If you set `CREDENTIAL_MCP_PRIVATE_KEY` or `CREDENTIAL_MCP_SEED_PHRASE` in the **server's** environment (e.g. in a `.env` file in this repo, or in the process that runs the HTTP server), the server does **not** expose OAuth discovery. Cursor will not show "Needs authentication" or "Connect"; each request to `/mcp` is authenticated using the key. For HTTP, the key must be in the **server's** env (Cursor's MCP "env" is for the client and is not sent to a remote HTTP server). For STDIO, Cursor passes env to the spawned process, so you can put the key in Cursor's MCP config `env`.
 
 ---
 
@@ -320,7 +342,7 @@ See [docs/test-scenarios.md](docs/test-scenarios.md) for Zephyr scenario mapping
 
 - **MCP server:** No env vars are required for basic use (STDIO). Environment (staging/production) and API URLs are set when you authenticate. For the **HTTP server** (OAuth): `MCP_OAUTH_BASE_URL`, `MCP_OAUTH_JWT_SECRET`, `MCP_OAUTH_REDIRECT_URIS`, `MCP_HTTP_PORT`, and `CREDENTIAL_SIGNER_URL` (see [Deploy option 3](#deploy-option-3-remote-http-server-with-oauth-needs-authentication-in-cursor)).
 - **Signer URL:** For the HTTP server OAuth flow, set **`CREDENTIAL_SIGNER_URL`** to your signer app URL (e.g. `https://your-signer.netlify.app`). If unset, the default is `https://credential-challenge-signer.netlify.app` (for local `npm run signer`).
-- **On-chain tools (optional):** To enable set price, payment deposit/withdraw/claim, and MOCA stake/unstake from the MCP without UI, set in MCP `env`: **CREDENTIAL_MCP_PRIVATE_KEY** or **CREDENTIAL_MCP_SEED_PHRASE**; **MOCA_RPC_URL**; **MOCA_CHAIN_ID**; **MOCA_PAYMENTS_CONTRACT**; optionally **MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS** (default staging: `0x238e4AA1a6CF2A774079E73019402Beb03F3a7b5`). Optional **CREDENTIAL_MCP_ACCOUNT_INDEX** for seed phrase (default 0). Use a dedicated wallet; never commit keys.
+- **On-chain tools (optional):** To enable set price, payment deposit/withdraw/claim, and MOCA stake/unstake from the MCP without UI, set in MCP `env`: **CREDENTIAL_MCP_PRIVATE_KEY** or **CREDENTIAL_MCP_SEED_PHRASE**; **MOCA_RPC_URL**; **MOCA_CHAIN_ID**; **MOCA_PAYMENTS_CONTRACT**; optionally **MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS** (auto-set per environment; override if needed). Optional **CREDENTIAL_MCP_ACCOUNT_INDEX** for seed phrase (default 0). Use a dedicated wallet; never commit keys. See [Private key and on-chain wallet](#private-key-and-on-chain-wallet) and **`.env.example`** for a template.
 
 ---
 

@@ -98,7 +98,8 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
 
   const issuerId = session.get('issuerId');
   const verifierId = session.get('verifierId');
-  const apiUrl = session.get('apiUrl') || 'https://credential.api.staging.air3.com';
+  const apiUrl = session.get('apiUrl');
+  if (!apiUrl) throw new Error('No API URL in session. Re-connect to the MCP server to authenticate.');
 
   // Fetch schema by ID so zkQuery uses correct type and context (required for backend validation)
   let schemaType = session.get('schemaType');

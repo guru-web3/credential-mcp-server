@@ -1,22 +1,18 @@
 /**
  * Contract instances for Payments Controller and Issuer Staking Controller.
- * Require chain wallet env and contract address env to be set.
+ * Addresses come from env or config (by CREDENTIAL_MCP_ENVIRONMENT: devnet for staging/sandbox, testnet for production).
  */
 
 import { getContract } from 'viem';
 import { getChainWalletClient, getChainPublicClient } from './wallet.js';
+import { getMocaPaymentsContract, getMocaIssuerStakingControllerAddress } from '../config.js';
 import { PAYMENTS_CONTROLLER_ABI } from './paymentsControllerAbi.js';
 import { ISSUER_STAKING_CONTROLLER_ABI } from './issuerStakingControllerAbi.js';
 
-const MOCA_PAYMENTS_CONTRACT = 'MOCA_PAYMENTS_CONTRACT';
-const MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS = 'MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS';
-
-const DEFAULT_ISSUER_STAKING_CONTROLLER = '0x238e4AA1a6CF2A774079E73019402Beb03F3a7b5';
-
-function toAddress(envKey: string, defaultVal?: string): `0x${string}` | null {
-  const raw = process.env[envKey] ?? defaultVal;
+function toAddress(raw: string | undefined): `0x${string}` | null {
   if (!raw || typeof raw !== 'string') return null;
   const s = raw.trim();
+  if (!s) return null;
   return s.startsWith('0x') ? (s as `0x${string}`) : (`0x${s}` as `0x${string}`);
 }
 
@@ -31,7 +27,7 @@ export type IssuerStakingControllerContract = any;
  */
 export function getPaymentsControllerContract(): PaymentsControllerContract | null {
   const wallet = getChainWalletClient();
-  const address = toAddress(MOCA_PAYMENTS_CONTRACT);
+  const address = toAddress(process.env.MOCA_PAYMENTS_CONTRACT || getMocaPaymentsContract());
   if (!wallet || !address) return null;
   return getContract({
     address,
@@ -45,7 +41,7 @@ export function getPaymentsControllerContract(): PaymentsControllerContract | nu
  */
 export function getPaymentsControllerReadContract(): PaymentsControllerContract | null {
   const publicClient = getChainPublicClient();
-  const address = toAddress(MOCA_PAYMENTS_CONTRACT);
+  const address = toAddress(process.env.MOCA_PAYMENTS_CONTRACT || getMocaPaymentsContract());
   if (!publicClient || !address) return null;
   return getContract({
     address,
@@ -59,7 +55,7 @@ export function getPaymentsControllerReadContract(): PaymentsControllerContract 
  */
 export function getIssuerStakingControllerContract(): IssuerStakingControllerContract | null {
   const wallet = getChainWalletClient();
-  const address = toAddress(MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS, DEFAULT_ISSUER_STAKING_CONTROLLER);
+  const address = toAddress(process.env.MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS || getMocaIssuerStakingControllerAddress());
   if (!wallet || !address) return null;
   return getContract({
     address,
@@ -73,7 +69,7 @@ export function getIssuerStakingControllerContract(): IssuerStakingControllerCon
  */
 export function getIssuerStakingControllerReadContract(): IssuerStakingControllerContract | null {
   const publicClient = getChainPublicClient();
-  const address = toAddress(MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS, DEFAULT_ISSUER_STAKING_CONTROLLER);
+  const address = toAddress(process.env.MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS || getMocaIssuerStakingControllerAddress());
   if (!publicClient || !address) return null;
   return getContract({
     address,

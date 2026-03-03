@@ -43,6 +43,8 @@ interface PageResult {
 export async function listSchemas(
   args: ListSchemasArgs
 ): Promise<{ schemas: SchemaRecord[]; total: number; issuerId: string }> {
+  await session.requireAuth();
+
   const issuerId = session.get('issuerId');
   if (!issuerId) {
     throw new Error('No issuer ID in session. Re-connect to the MCP server to authenticate.');

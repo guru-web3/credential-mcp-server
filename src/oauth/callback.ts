@@ -2,12 +2,16 @@ import { randomUUID } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { partnerLogin } from '../auth/partnerLogin.js';
 import { saveAuthCode } from '../auth/authCodeStore.js';
+import { getEnvironment, type ConfigEnvironment } from '../config.js';
 
 const MAX_CHALLENGE_AGE_MS = 5 * 60 * 1000; // 5 minutes
 
-function getEnv(str: string): 'staging' | 'production' {
+function parseClientEnv(str: string | undefined): ConfigEnvironment {
   const s = (str || '').toLowerCase();
-  return s === 'production' ? 'production' : 'staging';
+  if (s === 'production' || s === 'prod') return 'production';
+  if (s === 'sandbox') return 'sandbox';
+  if (s === 'staging') return 'staging';
+  return getEnvironment();
 }
 
 /**
@@ -30,7 +34,7 @@ export async function handleOAuthCallback(req: Request, res: Response): Promise<
   let walletAddress: string;
   let signature: string;
   let timestamp: number;
-  let environment: 'staging' | 'production' = 'staging';
+  let environment: ConfigEnvironment = getEnvironment();
 
   const credentialsJson = req.body?.credentialsJson as string | undefined;
   if (credentialsJson) {
@@ -47,7 +51,7 @@ export async function handleOAuthCallback(req: Request, res: Response): Promise<
       walletAddress = addr.startsWith('0x') ? addr.toLowerCase() : `0x${addr.toLowerCase()}`;
       signature = sig;
       timestamp = Number(ts);
-      environment = getEnv(env ?? '');
+      environment = parseClientEnv(env);
       const age = Date.now() - timestamp;
       if (age > MAX_CHALLENGE_AGE_MS || age < -60000) {
         res.status(400).send('Signature expired. Sign again within 5 minutes.');
@@ -69,7 +73,7 @@ export async function handleOAuthCallback(req: Request, res: Response): Promise<
     walletAddress = addr.startsWith('0x') ? addr.toLowerCase() : `0x${addr.toLowerCase()}`;
     signature = sig;
     timestamp = Number(ts);
-    environment = getEnv(env ?? '');
+    environment = parseClientEnv(env);
     const age = Date.now() - timestamp;
     if (age > MAX_CHALLENGE_AGE_MS || age < -60000) {
       res.status(400).send('Signature expired. Sign again within 5 minutes.');

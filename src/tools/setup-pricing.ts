@@ -4,6 +4,7 @@ import CryptoJS from 'crypto-js';
 import { parseUnits } from 'viem';
 import { decodeEventLog } from 'viem';
 import { session } from '../session.js';
+import { getMocaChainApiUrl, fromSessionEnvironment } from '../config.js';
 import {
   hasChainWallet,
   getPaymentsControllerContract,
@@ -99,9 +100,7 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
 
   // Payment API: same endpoint accepts init (schemaId only) or store (schemaId, paymentFeeSchemaId?, pricingModel?, complianceAccessKeyEnabled?).
   // The API does NOT accept priceUsd (returns error if sent). Price is set on-chain only (signer /set-price or dashboard). We use priceUsd only for setPriceUrl and nextSteps.
-  const paymentApiUrl = environment === 'production'
-    ? 'https://api.mocachain.org'
-    : 'https://api.staging.mocachain.org';
+  const paymentApiUrl = getMocaChainApiUrl(fromSessionEnvironment(environment));
 
   const pricingData: Record<string, unknown> = {
     schemaId,

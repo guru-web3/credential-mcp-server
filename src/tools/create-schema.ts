@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { session } from '../session.js';
 import { apiRequest } from '../utils/api.js';
+import { getCredentialApiUrl } from '../config.js';
 import { SchemaDataPoint } from '../types.js';
 import { alphanumericRegEx, numberOnlyReg, versionRegEx } from '../constants/regex.js';
 
@@ -130,7 +131,7 @@ export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>)
     session.set('schemaId', schemaId);
     session.set('schemaName', schemaName);
     session.set('schemaType', schemaType);
-    session.set('schemaContext', `https://credential.api.staging.air3.com/dstorage/download/${response.data.schemeDstorageId}`);
+    session.set('schemaContext', `${getCredentialApiUrl()}/dstorage/download/${response.data.schemeDstorageId}`);
 
     return {
       success: true,

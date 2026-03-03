@@ -5,6 +5,7 @@
 
 import axios from 'axios';
 import { session } from '../session.js';
+import { getMocaChainApiUrl, fromSessionEnvironment } from '../config.js';
 
 function generatePaymentHeaders(dashboardToken: string, issuerId: string): Record<string, string> {
   const timestamp = Date.now();
@@ -33,9 +34,7 @@ export async function queryPaymentSchema(schemaId?: string): Promise<any> {
     throw new Error('Missing required session data');
   }
 
-  const paymentApiUrl = environment === 'production'
-    ? 'https://api.mocachain.org'
-    : 'https://api.staging.mocachain.org';
+  const paymentApiUrl = getMocaChainApiUrl(fromSessionEnvironment(environment));
 
   const url = `${paymentApiUrl}/v1/payment/schema/fee`;
   const params = {

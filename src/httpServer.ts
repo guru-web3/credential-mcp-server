@@ -1,13 +1,18 @@
 #!/usr/bin/env node
 
+import 'dotenv/config';
+import { applyChainEnvDefaults } from './config.js';
+applyChainEnvDefaults();
+
 import express from 'express';
 import { randomUUID } from 'node:crypto';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { createMcpServer } from './server/createMcpServer.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { mcpAuthRouter, getOAuthProtectedResourceMetadataUrl } from '@modelcontextprotocol/sdk/server/auth/router.js';
-import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
+import { mcpAuthRouter } from '@modelcontextprotocol/sdk/server/auth/router.js';
+import { getEnvironment } from './config.js';
 import { createCredentialOAuthProvider, getBaseUrl } from './auth/credentialOAuthProvider.js';
+import { bearerOrKeyAuth, isKeyBasedAuthAvailable } from './auth/bearerOrKeyAuth.js';
 import { handleOAuthCallback } from './oauth/callback.js';
 import { asyncLocalStorage } from './auth/requestContext.js';
 
@@ -40,7 +45,6 @@ function getSessionId(req: express.Request): string | undefined {
 }
 
 const mcpServerUrl = new URL('/mcp', baseUrl);
-const resourceMetadataUrl = getOAuthProtectedResourceMetadataUrl(mcpServerUrl);
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -58,14 +62,18 @@ app.get('/', (_req, res) => {
   );
 });
 
-app.use(mcpAuthRouter({
-  provider: oauthProvider,
-  issuerUrl,
-  baseUrl: issuerUrl,
-  resourceServerUrl: mcpServerUrl,
-  resourceName: 'Animoca Credential MCP',
-  scopesSupported: ['mcp:connect'],
-}));
+// When CREDENTIAL_MCP_PRIVATE_KEY or CREDENTIAL_MCP_SEED_PHRASE is set, skip OAuth discovery
+// so Cursor does not show "Needs authentication" / "Connect". Requests to /mcp use key-based auth instead.
+if (!isKeyBasedAuthAvailable()) {
+  app.use(mcpAuthRouter({
+    provider: oauthProvider,
+    issuerUrl,
+    baseUrl: issuerUrl,
+    resourceServerUrl: mcpServerUrl,
+    resourceName: 'Animoca Credential MCP',
+    scopesSupported: ['mcp:connect'],
+  }));
+}
 
 app.get('/oauth/login', (req, res) => {
   const state = (req.query.state as string) ?? '';
@@ -85,16 +93,14 @@ app.get('/oauth/login', (req, res) => {
   signerRedirect.searchParams.set('redirect_uri', redirectUri);
   signerRedirect.searchParams.set('client_id', clientId);
   signerRedirect.searchParams.set('callback_url', callbackUrl);
+  signerRedirect.searchParams.set('environment', getEnvironment());
   res.redirect(302, signerRedirect.href);
 });
 
 app.post('/oauth/callback', handleOAuthCallback);
 
-app.all('/mcp', requireBearerAuth({
-  verifier: oauthProvider,
-  resourceMetadataUrl,
-}), async (req, res) => {
-  const auth = req.auth;
+app.all('/mcp', bearerOrKeyAuth(oauthProvider), async (req, res) => {
+  const auth = (req as express.Request & { auth?: import('@modelcontextprotocol/sdk/server/auth/types.js').AuthInfo }).auth;
   if (!auth) {
     res.status(401).end();
     return;

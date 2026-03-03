@@ -15,18 +15,16 @@ import {
 } from 'viem';
 import { type Account, privateKeyToAccount, mnemonicToAccount } from 'viem/accounts';
 
+import { getMocaRpcUrl, getMocaChainId } from '../config.js';
+
 const WALLET_ENV_PRIVATE_KEY = 'CREDENTIAL_MCP_PRIVATE_KEY';
 const WALLET_ENV_SEED_PHRASE = 'CREDENTIAL_MCP_SEED_PHRASE';
 const WALLET_ENV_ACCOUNT_INDEX = 'CREDENTIAL_MCP_ACCOUNT_INDEX';
-const MOCA_RPC_URL = 'MOCA_RPC_URL';
-const MOCA_CHAIN_ID = 'MOCA_CHAIN_ID';
 
 function getChain(): Chain | null {
-  const rpcUrl = process.env[MOCA_RPC_URL];
-  const chainIdStr = process.env[MOCA_CHAIN_ID];
-  if (!rpcUrl || !chainIdStr) return null;
-  const chainId = parseInt(chainIdStr, 10);
-  if (Number.isNaN(chainId)) return null;
+  const rpcUrl = process.env.MOCA_RPC_URL || getMocaRpcUrl();
+  const chainId = process.env.MOCA_CHAIN_ID != null ? parseInt(process.env.MOCA_CHAIN_ID, 10) : getMocaChainId();
+  if (!rpcUrl || Number.isNaN(chainId)) return null;
   return {
     id: chainId,
     name: 'MOCA',
@@ -69,10 +67,11 @@ export function getChainWalletClient(): WalletClient<Transport, Chain> | null {
   const account = getAccount();
   const chain = getChain();
   if (!account || !chain) return null;
+  const rpcUrl = process.env.MOCA_RPC_URL || getMocaRpcUrl();
   cachedWalletClient = createWalletClient({
     account,
     chain,
-    transport: http(process.env[MOCA_RPC_URL]),
+    transport: http(rpcUrl),
   });
   return cachedWalletClient;
 }
@@ -85,9 +84,10 @@ export function getChainPublicClient(): PublicClient<Transport, Chain> | null {
   if (cachedPublicClient !== null) return cachedPublicClient;
   const chain = getChain();
   if (!chain) return null;
+  const rpcUrl = process.env.MOCA_RPC_URL || getMocaRpcUrl();
   cachedPublicClient = createPublicClient({
     chain,
-    transport: http(process.env[MOCA_RPC_URL]),
+    transport: http(rpcUrl),
   });
   return cachedPublicClient;
 }

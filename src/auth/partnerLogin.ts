@@ -1,5 +1,6 @@
 import CryptoJS from 'crypto-js';
 import axios from 'axios';
+import { getCredentialApiUrl, type ConfigEnvironment } from '../config.js';
 
 const LOGIN_REQUEST_TIMEOUT_MS = 30_000;
 
@@ -27,12 +28,9 @@ export async function partnerLogin(
   walletAddress: string,
   signature: string,
   timestamp: number,
-  environment: 'staging' | 'production' = 'staging'
+  environment: ConfigEnvironment = 'staging'
 ): Promise<PartnerLoginResult> {
-  const apiUrl =
-    environment === 'production'
-      ? 'https://credential.api.air3.com'
-      : 'https://credential.api.staging.air3.com';
+  const apiUrl = getCredentialApiUrl(environment);
   const loginBody = { walletAddress, signature, timestamp };
   const headers = generateHeaders(loginBody, timestamp);
 

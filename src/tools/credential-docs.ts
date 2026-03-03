@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import { getCredentialDashboardUrl } from '../config.js';
 
 export const CredentialDocsArgsSchema = z.object({
   flow: z
@@ -23,7 +24,9 @@ export const CredentialDocsArgsSchema = z.object({
 
 export type CredentialDocsArgs = z.infer<typeof CredentialDocsArgsSchema>;
 
-const ISSUANCE_STEPS = `## Quickstart 2: Issue Credentials (MCP + app)
+function buildIssuanceSteps(): string {
+  const dashboardUrl = getCredentialDashboardUrl();
+  return `## Quickstart 2: Issue Credentials (MCP + app)
 
 This flow is aligned with [AIR Kit Quickstart: Credential Issuance](https://docs.moca.network/airkit/quickstart/issue-credentials).
 
@@ -51,15 +54,18 @@ This flow is aligned with [AIR Kit Quickstart: Credential Issuance](https://docs
 ### In your app (production standards)
 
 - **Install:** \`npm install @mocanetwork/airkit\`
-- **Config:** Partner ID and Issuer DID from [Developer Dashboard → Account → General](https://developers.sandbox.air3.com/dashboard/general).
+- **Config:** Partner ID and Issuer DID from [Developer Dashboard → Account → General](${dashboardUrl}/dashboard/general).
 - **JWT:** For production, **generate JWTs on the backend** to keep private keys secure. [Partner Authentication](https://docs.moca.network/airkit/usage/partner-authentication). Configure JWKS URL in Dashboard.
 - **Issue:** \`airService.issueCredential({ authToken: jwt, credentialId, credentialSubject, issuerDid, curve?: "secp256r1" | "secp256k1" })\`. \`credentialSubject\` keys must match schema attributes (string, number, boolean, date).
 - **CAK:** If compliance encryption is enabled, handle \`result.cakPublicKey\` for encrypting compliance data.
 - **Server-side:** For issuance without user interaction, use [Issue on Behalf](https://docs.moca.network/airkit/usage/credential/issue-on-behalf).
 
 **Docs:** [Quickstart: Issue Credentials](https://docs.moca.network/airkit/quickstart/issue-credentials) | [Schema Creation](https://docs.moca.network/airkit/usage/credential/schema-creation) | [Issue on Behalf](https://docs.moca.network/airkit/usage/credential/issue-on-behalf)`;
+}
 
-const VERIFICATION_STEPS = `## Quickstart 3: Verify Credentials (MCP + app)
+function buildVerificationSteps(): string {
+  const dashboardUrl = getCredentialDashboardUrl();
+  return `## Quickstart 3: Verify Credentials (MCP + app)
 
 This flow is aligned with [AIR Kit Quickstart: Credential Verification](https://docs.moca.network/airkit/quickstart/verify-credentials).
 
@@ -84,12 +90,13 @@ This flow is aligned with [AIR Kit Quickstart: Credential Verification](https://
 ### In your app (production standards)
 
 - **Install:** \`npm install @mocanetwork/airkit\`
-- **Config:** Partner ID and Verifier DID from [Developer Dashboard → Account → General](https://developers.sandbox.air3.com/dashboard/general). \`programId\` from Verifier → Programs.
+- **Config:** Partner ID and Verifier DID from [Developer Dashboard → Account → General](${dashboardUrl}/dashboard/general). \`programId\` from Verifier → Programs.
 - **JWT:** For production, **generate JWTs on the backend** to keep private keys secure. [Partner Authentication](https://docs.moca.network/airkit/usage/partner-authentication). Configure JWKS URL in Dashboard.
 - **Verify:** \`airService.verifyCredential({ authToken: jwt, programId, redirectUrl })\`. \`redirectUrl\` (redirectUrlForIssuer) used when user has no credential and should be sent to issue one.
 - **Status:** \`result.status === "Compliant"\` → success (zkProofs, transactionHash; optionally \`cakPrivateKey\` for compliance decryption). \`"Non-Compliant"\` or other status → handle accordingly.
 
 **Docs:** [Quickstart: Verify Credentials](https://docs.moca.network/airkit/quickstart/verify-credentials) | [Credentials Overview](https://docs.moca.network/airkit/usage/credential/credentials-flow)`;
+}
 
 export async function credentialDocs(args: z.infer<typeof CredentialDocsArgsSchema>) {
   const validated = CredentialDocsArgsSchema.parse(args);
@@ -97,11 +104,11 @@ export async function credentialDocs(args: z.infer<typeof CredentialDocsArgsSche
 
   let markdown: string;
   if (flow === 'issuance') {
-    markdown = ISSUANCE_STEPS;
+    markdown = buildIssuanceSteps();
   } else if (flow === 'verification') {
-    markdown = VERIFICATION_STEPS;
+    markdown = buildVerificationSteps();
   } else {
-    markdown = `${ISSUANCE_STEPS}\n\n---\n\n${VERIFICATION_STEPS}`;
+    markdown = `${buildIssuanceSteps()}\n\n---\n\n${buildVerificationSteps()}`;
   }
 
   return {
