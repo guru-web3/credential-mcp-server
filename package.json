@@ -13,6 +13,11 @@
     "run:server": "pnpm run build && node dist/httpServer.js",
     "watch": "tsc --watch",
     "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
     "test": "node --test tests/*.js",
     "test:ci": "npm run build && npm run test",
     "extract-zephyr": "node scripts/extract-zephyr-scenarios.js",
@@ -45,10 +50,14 @@
   },
   "devDependencies": {
     "xlsx": "^0.18.5",
+    "@eslint/js": "^9.15.0",
     "@types/crypto-js": "^4.2.2",
     "@types/express": "^4.17.21",
     "@types/node": "^22.10.2",
-    "typescript": "^5.7.2"
+    "eslint": "^9.15.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.15.0"
   },
   "files": [
     "dist",

@@ -92,8 +92,9 @@ async function createSampleIssuer() {
     try {
       const paymentSchemas = await queryPaymentSchema();
       console.log(`✅ Payment schema verified - found ${paymentSchemas?.data?.length || 0} schema(s)\n`);
-    } catch (error: any) {
-      console.log(`⚠️  Payment schema query failed: ${error.message}\n`);
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      console.log(`⚠️  Payment schema query failed: ${e?.message ?? err}\n`);
     }
 
     // Wait a moment for backend to process

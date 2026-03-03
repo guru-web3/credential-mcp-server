@@ -28,7 +28,7 @@ export interface SessionState {
   apiUrl: string;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   code: string;
   message: string;
   data: T;

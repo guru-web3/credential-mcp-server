@@ -54,7 +54,7 @@ export async function createCredentialTemplate(
   }
 
   // Resolve schemaId: input takes precedence, then session
-  let schemaId = validated.schemaId ?? session.get('schemaId');
+  const schemaId = validated.schemaId ?? session.get('schemaId');
   let schemeType = validated.schemeType;
   let schemeTitle = validated.schemeTitle;
   let credentialName = validated.credentialName;

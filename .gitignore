@@ -21,6 +21,9 @@ npm-debug.log*
 *.swo
 *~
 
+# Backup files
+*.bak
+
 # Optional
 coverage/
 .nyc_output/

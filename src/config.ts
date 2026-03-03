@@ -64,6 +64,18 @@ export function getCredentialApiUrl(env?: ConfigEnvironment): string {
   return CREDENTIAL_API_URLS[env ?? getConfigEnvironment()];
 }
 
+/** Default API signature key (same as Credential Dashboard JAVA_API_AES_KEY in sig-header.tsx). Override with CREDENTIAL_API_SIGNATURE_KEY. */
+const DEFAULT_API_SIGNATURE_KEY = 'WpVog9P8NveQLEJYE2cnjg==';
+
+/**
+ * API signature key for credential API requests (same as Credential Dashboard uses for x-signature).
+ * Defaults to dashboard value; set CREDENTIAL_API_SIGNATURE_KEY in .env to override.
+ */
+export function getCredentialApiSignatureKey(): string {
+  const key = getEnv('CREDENTIAL_API_SIGNATURE_KEY');
+  return key || DEFAULT_API_SIGNATURE_KEY;
+}
+
 /** Developer dashboard base URL. Override with CREDENTIAL_DASHBOARD_URL. */
 export function getCredentialDashboardUrl(env?: ConfigEnvironment): string {
   const override = getEnv('CREDENTIAL_DASHBOARD_URL');

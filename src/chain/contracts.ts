@@ -16,9 +16,9 @@ function toAddress(raw: string | undefined): `0x${string}` | null {
   return s.startsWith('0x') ? (s as `0x${string}`) : (`0x${s}` as `0x${string}`);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- viem getContract return varies by wallet vs public client; call sites use .read/.write
 export type PaymentsControllerContract = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- viem getContract return varies by wallet vs public client; call sites use .read/.write
 export type IssuerStakingControllerContract = any;
 
 /**
