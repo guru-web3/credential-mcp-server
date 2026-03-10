@@ -3,7 +3,7 @@ import CryptoJS from 'crypto-js';
 import axiosRetry from 'axios-retry';
 import { session } from '../session.js';
 import { ApiResponse } from '../types.js';
-import { getCredentialApiSignatureKey } from '../config.js';
+import { getCredentialApiSignatureKey, getCredentialApiUrl } from '../config.js';
 
 const DEBUG = process.env.CREDENTIAL_MCP_DEBUG === 'true' || process.env.CREDENTIAL_MCP_DEBUG === '1';
 
@@ -40,13 +40,15 @@ function generateApiHeaders(body: unknown, dashboardToken?: string): Record<stri
 }
 
 export function createApiClient(): AxiosInstance {
-  const apiUrl = session.get('apiUrl');
+  // Use current config so CREDENTIAL_MCP_ENVIRONMENT from .env is respected after restart
+  const apiUrl = getCredentialApiUrl();
 
   const client = axios.create({
     baseURL: apiUrl,
     timeout: 30000,
   });
 
+  console.log('[DEBUG] Creating API client for:', apiUrl);
   axiosRetry(client, {
     retries: 3,
     retryDelay: axiosRetry.exponentialDelay,
@@ -86,7 +88,7 @@ export async function apiRequest<T>(
   try {
     if (DEBUG) {
       console.log(`[DEBUG] API Request: ${method} ${path}`);
-      const apiUrl = session.get('apiUrl');
+      const apiUrl = getCredentialApiUrl();
       const curlHeaders = Object.entries(headers)
         .map(([k, v]) => `  -H '${k}: ${v}'`)
         .join(' \\\n');
@@ -94,6 +96,7 @@ export async function apiRequest<T>(
       console.log(`[DEBUG] curl '${apiUrl}${path}' \\\n${curlHeaders}${curlBody ? ' \\\n' + curlBody : ''}`);
     }
 
+    console.log('[DEBUG] Headers:', path);
     const response = await client.request({
       method,
       url: path,

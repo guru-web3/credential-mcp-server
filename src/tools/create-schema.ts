@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { session } from '../session.js';
 import { apiRequest } from '../utils/api.js';
-import { getCredentialApiUrl } from '../config.js';
+import { getCredentialApiUrl, getEnvironment } from '../config.js';
 import { SchemaDataPoint } from '../types.js';
 import { alphanumericRegEx, numberOnlyReg, versionRegEx } from '../constants/regex.js';
 
@@ -147,6 +147,14 @@ export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>)
       ],
     };
   } catch (error: any) {
-    throw new Error(`Schema creation failed: ${error.message}`);
+    const env = getEnvironment();
+    const baseMsg = `Schema creation failed: ${error.message}`;
+    console.log('[DEBUG] Error:', error);
+    if (env === 'sandbox') {
+      throw new Error(
+        `${baseMsg} Sandbox is not currently supported for schema creation (backend not yet deployed). Use CREDENTIAL_MCP_ENVIRONMENT=staging or production.`
+      );
+    }
+    throw new Error(baseMsg);
   }
 }

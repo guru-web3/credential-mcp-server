@@ -1,25 +1,28 @@
 /**
  * Central config: all URLs from env. No hardcoded API hosts.
- * Set CREDENTIAL_MCP_ENVIRONMENT or config_env to sandbox | staging | production (or prod).
+ * Set CREDENTIAL_MCP_ENVIRONMENT or config_env to sandbox | sandbox-testnet | staging | production (or prod).
  * Override any URL with the corresponding _URL env var.
  */
 
-export type ConfigEnvironment = 'sandbox' | 'staging' | 'production';
+export type ConfigEnvironment = 'sandbox' | 'sandbox-testnet' | 'staging' | 'production';
 
 const CREDENTIAL_API_URLS: Record<ConfigEnvironment, string> = {
   sandbox: 'https://credential-devnet.api.sandbox.air3.com',
+  'sandbox-testnet': 'https://credential-testnet.api.sandbox.air3.com',
   staging: 'https://credential.api.staging.air3.com',
   production: 'https://credential.api.air3.com',
 };
 
 const CREDENTIAL_DASHBOARD_URLS: Record<ConfigEnvironment, string> = {
   sandbox: 'https://developers.sandbox.air3.com',
+  'sandbox-testnet': 'https://developers.sandbox-testnet.air3.com',
   staging: 'https://developers.sandbox.air3.com',
   production: 'https://developers.air3.com',
 };
 
 const MOCA_CHAIN_API_URLS: Record<ConfigEnvironment, string> = {
   sandbox: 'https://api.staging.mocachain.org',
+  'sandbox-testnet': 'https://api.sandbox.mocachain.org',
   staging: 'https://api.staging.mocachain.org',
   production: 'https://api.mocachain.org',
 };
@@ -48,11 +51,12 @@ function getConfigEnvironment(): ConfigEnvironment {
   const raw = (getEnv('config_env') || getEnv('CREDENTIAL_MCP_ENVIRONMENT')).toLowerCase();
   if (raw === 'production' || raw === 'prod') return 'production';
   if (raw === 'staging') return 'staging';
+  if (raw === 'sandbox-testnet' || raw === 'sandboxtestnet') return 'sandbox-testnet';
   if (raw === 'sandbox') return 'sandbox';
-  return 'staging';
+  return 'sandbox-testnet';
 }
 
-/** Environment (sandbox | staging | production). Default: staging. */
+/** Environment (sandbox | sandbox-testnet | staging | production). Default: sandbox-testnet. */
 export function getEnvironment(): ConfigEnvironment {
   return getConfigEnvironment();
 }
@@ -93,7 +97,8 @@ export function getMocaChainApiUrl(env?: ConfigEnvironment): string {
 /** Map config env to session environment (development | staging | production). */
 export function toSessionEnvironment(env: ConfigEnvironment): 'development' | 'staging' | 'production' {
   if (env === 'production') return 'production';
-  return env === 'sandbox' ? 'development' : 'staging';
+  if (env === 'sandbox') return 'development';
+  return 'staging'; // sandbox-testnet and staging
 }
 
 /** Map session environment back to config env (for tools that only have session.state.environment). */
@@ -102,15 +107,15 @@ export function fromSessionEnvironment(env: 'development' | 'staging' | 'product
   return env === 'development' ? 'sandbox' : 'staging';
 }
 
-/** MOCA RPC URL: devnet for sandbox/staging, testnet for production. Override with MOCA_RPC_URL. */
+/** MOCA RPC URL: devnet for sandbox/staging, testnet for production/sandbox-testnet. Override with MOCA_RPC_URL. */
 export function getMocaRpcUrl(env?: ConfigEnvironment): string {
   const override = getEnv('MOCA_RPC_URL');
   if (override) return override;
   const e = env ?? getConfigEnvironment();
-  return e === 'production' ? MOCA_TESTNET.rpcUrl : MOCA_DEVNET.rpcUrl;
+  return e === 'production' || e === 'sandbox-testnet' ? MOCA_TESTNET.rpcUrl : MOCA_DEVNET.rpcUrl;
 }
 
-/** MOCA chain ID: 5151 devnet (sandbox/staging), 222888 testnet (production). Override with MOCA_CHAIN_ID. */
+/** MOCA chain ID: 5151 devnet (sandbox/staging), 222888 testnet (production/sandbox-testnet). Override with MOCA_CHAIN_ID. */
 export function getMocaChainId(env?: ConfigEnvironment): number {
   const override = getEnv('MOCA_CHAIN_ID');
   if (override) {
@@ -118,7 +123,7 @@ export function getMocaChainId(env?: ConfigEnvironment): number {
     if (!Number.isNaN(n)) return n;
   }
   const e = env ?? getConfigEnvironment();
-  return e === 'production' ? MOCA_TESTNET.chainId : MOCA_DEVNET.chainId;
+  return e === 'production' || e === 'sandbox-testnet' ? MOCA_TESTNET.chainId : MOCA_DEVNET.chainId;
 }
 
 /** Payments controller contract address. Override with MOCA_PAYMENTS_CONTRACT. */
@@ -126,7 +131,7 @@ export function getMocaPaymentsContract(env?: ConfigEnvironment): string {
   const override = getEnv('MOCA_PAYMENTS_CONTRACT');
   if (override) return override;
   const e = env ?? getConfigEnvironment();
-  return e === 'production' ? MOCA_TESTNET.paymentsContract : MOCA_DEVNET.paymentsContract;
+  return e === 'production' || e === 'sandbox-testnet' ? MOCA_TESTNET.paymentsContract : MOCA_DEVNET.paymentsContract;
 }
 
 /** Issuer staking controller address. Override with MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS. */
@@ -134,7 +139,7 @@ export function getMocaIssuerStakingControllerAddress(env?: ConfigEnvironment): 
   const override = getEnv('MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS');
   if (override) return override;
   const e = env ?? getConfigEnvironment();
-  return e === 'production' ? MOCA_TESTNET.issuerStakingController : MOCA_DEVNET.issuerStakingController;
+  return e === 'production' || e === 'sandbox-testnet' ? MOCA_TESTNET.issuerStakingController : MOCA_DEVNET.issuerStakingController;
 }
 
 /** Apply chain env defaults from config so MOCA_* are set when not in .env. Call after dotenv. */

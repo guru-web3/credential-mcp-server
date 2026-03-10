@@ -5,13 +5,11 @@
 
 import axios from 'axios';
 import { session } from '../session.js';
-import { getMocaChainApiUrl, fromSessionEnvironment } from '../config.js';
+import { getMocaChainApiUrl, getCredentialDashboardUrl } from '../config.js';
 
-function generatePaymentHeaders(dashboardToken: string, issuerId: string): Record<string, string> {
+function buildPaymentHeaders(dashboardToken: string, issuerId: string): Record<string, string> {
   const timestamp = Date.now();
-  
-  // Payment API uses different signature - just basic headers
-  return {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-appversion': 'zkserapi_1.0.0',
     'x-dashboard-auth': dashboardToken,
@@ -19,6 +17,13 @@ function generatePaymentHeaders(dashboardToken: string, issuerId: string): Recor
     'x-timestamp': timestamp.toString(),
     'x-signature': '', // Will be generated if needed
   };
+  const dashboardBaseUrl = getCredentialDashboardUrl();
+  if (dashboardBaseUrl) {
+    const base = dashboardBaseUrl.replace(/\/$/, '');
+    headers['Origin'] = base;
+    headers['Referer'] = `${base}/`;
+  }
+  return headers;
 }
 
 export async function queryPaymentSchema(schemaId?: string): Promise<any> {
@@ -28,13 +33,13 @@ export async function queryPaymentSchema(schemaId?: string): Promise<any> {
   const partnerId = session.get('partnerId');
   const dashboardToken = session.get('dashboardToken');
   const issuerId = session.get('issuerId');
-  const environment = session.get('environment');
 
   if (!credentialSchemaId || !partnerId) {
     throw new Error('Missing required session data');
   }
 
-  const paymentApiUrl = getMocaChainApiUrl(fromSessionEnvironment(environment));
+  // Use current config so CREDENTIAL_MCP_ENVIRONMENT from .env is respected
+  const paymentApiUrl = getMocaChainApiUrl();
 
   const url = `${paymentApiUrl}/v1/payment/schema/fee`;
   const params = {
@@ -48,8 +53,8 @@ export async function queryPaymentSchema(schemaId?: string): Promise<any> {
   console.log('[DEBUG] Querying payment schema:', params);
 
   try {
-    const headers = generatePaymentHeaders(dashboardToken!, issuerId!);
-    
+    const headers = buildPaymentHeaders(dashboardToken!, issuerId!);
+
     const response = await axios.get(url, {
       params,
       headers,

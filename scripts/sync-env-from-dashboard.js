@@ -38,6 +38,7 @@ const DASHBOARD_TO_MCP = {
 function inferEnvironment(apiUrl) {
   if (!apiUrl) return 'staging';
   const u = apiUrl.toLowerCase();
+  if (u.includes('credential-testnet') && u.includes('sandbox')) return 'sandbox-testnet';
   if (u.includes('devnet') || u.includes('sandbox.air3')) return 'sandbox';
   if (u.includes('staging.air3')) return 'staging';
   if (u.includes('air3.com') && !u.includes('staging') && !u.includes('sandbox')) return 'production';

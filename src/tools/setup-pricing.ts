@@ -4,7 +4,7 @@ import CryptoJS from 'crypto-js';
 import { parseUnits } from 'viem';
 import { decodeEventLog } from 'viem';
 import { session } from '../session.js';
-import { getMocaChainApiUrl, fromSessionEnvironment } from '../config.js';
+import { getMocaChainApiUrl, getCredentialDashboardUrl } from '../config.js';
 import {
   hasChainWallet,
   getPaymentsControllerContract,
@@ -44,8 +44,14 @@ export const SetupPricingArgsSchema = z.object({
  * Generate headers for payment API.
  * Signature must match dashboard: SHA256(body) -> digest_ts -> AES-ECB -> SHA256(ciphertext WordArray).
  * Do not use SHA256(encrypted.toString()) - dashboard hashes raw ciphertext.
+ * When dashboardBaseUrl is provided, adds Origin/Referer so CloudFront (e.g. api.sandbox.mocachain.org) accepts the request.
  */
-function generatePaymentHeaders(body: any, dashboardToken: string, issuerId: string): Record<string, string> {
+function generatePaymentHeaders(
+  body: any,
+  dashboardToken: string,
+  issuerId: string,
+  dashboardBaseUrl?: string
+): Record<string, string> {
   const timestamp = Date.now().toString();
   const bodyStr = typeof body === 'string' ? body : JSON.stringify(body);
 
@@ -66,7 +72,7 @@ function generatePaymentHeaders(body: any, dashboardToken: string, issuerId: str
   // Step 4: SHA256 of ciphertext WordArray (dashboard: hasher2.update(thirdStepResults.ciphertext))
   const signature = CryptoJS.SHA256(encrypted.ciphertext).toString();
 
-  return {
+  const headers: Record<string, string> = {
     'accept': 'application/json, text/plain, */*',
     'Content-Type': 'application/json',
     'x-signature': signature,
@@ -75,6 +81,12 @@ function generatePaymentHeaders(body: any, dashboardToken: string, issuerId: str
     'x-dashboard-auth': dashboardToken,
     'x-issuer-id': issuerId,
   };
+  if (dashboardBaseUrl) {
+    const base = dashboardBaseUrl.replace(/\/$/, '');
+    headers['Origin'] = base;
+    headers['Referer'] = `${base}/`;
+  }
+  return headers;
 }
 
 export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>) {
@@ -92,7 +104,6 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
 
   const dashboardToken = session.get('dashboardToken');
   const issuerId = session.get('issuerId');
-  const environment = session.get('environment');
 
   if (!dashboardToken || !issuerId) {
     throw new Error('Missing authentication tokens. Re-connect to the MCP server to authenticate.');
@@ -100,7 +111,9 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
 
   // Payment API: same endpoint accepts init (schemaId only) or store (schemaId, paymentFeeSchemaId?, pricingModel?, complianceAccessKeyEnabled?).
   // The API does NOT accept priceUsd (returns error if sent). Price is set on-chain only (signer /set-price or dashboard). We use priceUsd only for setPriceUrl and nextSteps.
-  const paymentApiUrl = getMocaChainApiUrl(fromSessionEnvironment(environment));
+  // Use current config so CREDENTIAL_MCP_ENVIRONMENT from .env is respected
+  const paymentApiUrl = getMocaChainApiUrl();
+  const dashboardBaseUrl = getCredentialDashboardUrl();
 
   const pricingData: Record<string, unknown> = {
     schemaId,
@@ -215,7 +228,7 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
             complianceAccessKeyEnabled,
             paymentFeeSchemaId: newPaymentFeeSchemaId,
           };
-          const headers = generatePaymentHeaders(bodyWithId as any, dashboardToken, issuerId);
+          const headers = generatePaymentHeaders(bodyWithId as any, dashboardToken, issuerId, dashboardBaseUrl);
           const response = await axios.post(
             `${paymentApiUrl}/v1/payment/schema/fee`,
             bodyWithId,

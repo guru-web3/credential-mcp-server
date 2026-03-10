@@ -2,6 +2,7 @@ import { z } from 'zod';
 import CryptoJS from 'crypto-js';
 import { session } from '../session.js';
 import { apiRequest } from '../utils/api.js';
+import { getCredentialApiUrl } from '../config.js';
 
 const OPERATORS = ['>', '>=', '<', '<=', '=', '!='] as const;
 const operatorEnum = z.enum(OPERATORS);
@@ -98,8 +99,7 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
 
   const issuerId = session.get('issuerId');
   const verifierId = session.get('verifierId');
-  const apiUrl = session.get('apiUrl');
-  if (!apiUrl) throw new Error('No API URL in session. Re-connect to the MCP server to authenticate.');
+  const apiUrl = getCredentialApiUrl();
 
   // Fetch schema by ID so zkQuery uses correct type and context (required for backend validation)
   let schemaType = session.get('schemaType');
