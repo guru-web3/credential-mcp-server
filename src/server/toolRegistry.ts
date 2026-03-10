@@ -1,9 +1,11 @@
 /**
  * Central tool registry: single source of truth for tools/list and tools/call.
  * Add new tools here only; no switch in createMcpServer.
+ * When CREDENTIAL_MCP_ENVIRONMENT=sandbox, pricing/stake/unstake/withdraw/payment tools are excluded.
  */
 
 import type { z } from 'zod';
+import { getEnvironment } from '../config.js';
 import { createSchema, CreateSchemaArgsSchema } from '../tools/create-schema.js';
 import { createCredentialTemplate, CreateCredentialTemplateArgsSchema } from '../tools/create-credential-template.js';
 import { setupPricing, SetupPricingArgsSchema } from '../tools/setup-pricing.js';
@@ -397,14 +399,35 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
   },
 ];
 
+/** Tool names excluded when CREDENTIAL_MCP_ENVIRONMENT=sandbox (pricing, stake, unstake, withdraw, fee wallet/payment). */
+const SANDBOX_EXCLUDED_TOOL_NAMES = new Set([
+  'credential_setup_pricing',
+  'credential_set_price',
+  'credential_stake_moca',
+  'credential_unstake_moca',
+  'credential_claim_unstake_moca',
+  'credential_payment_deposit',
+  'credential_payment_withdraw',
+  'credential_payment_claim_fees',
+]);
+
 const BY_NAME = new Map<string, ToolRegistryEntry>(TOOL_ENTRIES.map((e) => [e.name, e]));
 
-/** Tools list for MCP tools/list (same shape as before). */
-export function getToolsList(): ToolListEntry[] {
-  return TOOL_ENTRIES.map(({ name, description, inputSchema }) => ({ name, description, inputSchema }));
+function isSandbox(): boolean {
+  return getEnvironment() === 'sandbox';
 }
 
-/** Get registry entry by tool name for tools/call dispatch. */
+/** Tools list for MCP tools/list (same shape as before). Sandbox env excludes pricing/payment/staking tools. */
+export function getToolsList(): ToolListEntry[] {
+  const list = TOOL_ENTRIES.map(({ name, description, inputSchema }) => ({ name, description, inputSchema }));
+  if (isSandbox()) {
+    return list.filter((t) => !SANDBOX_EXCLUDED_TOOL_NAMES.has(t.name));
+  }
+  return list;
+}
+
+/** Get registry entry by tool name for tools/call dispatch. Sandbox env returns undefined for excluded tools. */
 export function getToolEntry(name: string): ToolRegistryEntry | undefined {
+  if (isSandbox() && SANDBOX_EXCLUDED_TOOL_NAMES.has(name)) return undefined;
   return BY_NAME.get(name);
 }

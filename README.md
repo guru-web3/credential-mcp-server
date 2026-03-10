@@ -6,9 +6,13 @@ Use **natural language** in Cursor (or other MCP clients) to manage AIR credenti
 
 ## Clone and run the server
 
+**Repo (with MCP install & setup instructions):**  
+https://github.com/mocaverse/credential-mcp-server/tree/feat/private-key-auth
+You can point an AI agent at this repo; the README contains full install and MCP configuration steps.
+
 1. **Clone the repo**
    ```bash
-   git clone <repo-url>
+   git clone -b feat/private-key-auth https://github.com/mocaverse/credential-mcp-server.git
    cd credential-mcp-server
    ```
 
@@ -18,40 +22,38 @@ Use **natural language** in Cursor (or other MCP clients) to manage AIR credenti
    ```
 
 3. **Configure environment**  
-   Copy `.env.example` to `.env` and set at least `CREDENTIAL_MCP_ENVIRONMENT` (`sandbox` | `staging` | `production`). The API signature key defaults to the same value as the Credential Dashboard; set `CREDENTIAL_API_SIGNATURE_KEY` only to override. Do not commit `.env`. Optional: `CREDENTIAL_MCP_DEBUG=1` for verbose logging; `CREDENTIAL_MCP_PRIVATE_KEY` for on-chain tools (see [Private key and on-chain wallet](#private-key-and-on-chain-wallet)).
+   Copy `.env.example` to `.env` and set:
+
+   - **`CREDENTIAL_MCP_ENVIRONMENT`** — Use **`staging`** or **`production`** only for testing.  
+     - `staging` → Devnet; dashboard: https://developers.staging.air3.com/dashboard
+     - `production` → Testnet; dashboard: https://developers.air3.com/dashboard
+   - **`CREDENTIAL_MCP_PRIVATE_KEY`** — Your wallet private key (64 hex chars). Stored only in `.env`; do not commit. Use a dedicated, low-value wallet. Required for on-chain tools (stake, set price, payments). See [Private key and on-chain wallet](#private-key-and-on-chain-wallet).
+
+   **Note:** For **sandbox** (aligned with [credential-dashboard sandbox](https://github.com/mocaverse/credential-dashboard/tree/sandbox)), set `CREDENTIAL_MCP_ENVIRONMENT=sandbox`. The server then exposes a reduced tool list (no pricing, stake, unstake, withdraw, or payment tools). See [docs/SANDBOX.md](docs/SANDBOX.md).
 
 4. **Build**
    ```bash
    pnpm run build
    ```
 
-5. **Run the HTTP server (recommended)**  
-   In the repo directory:
-   ```bash
-   pnpm run run:server
-   ```
-   Default endpoint: `http://localhost:3749/mcp`. Override port with `MCP_HTTP_PORT` in `.env`.
+5. **Run the server**
+   - **HTTP server:** In the repo directory run:
+     ```bash
+     pnpm run run:server
+     ```
+     Then point your MCP client at `http://localhost:3749/mcp` (default port; override with `MCP_HTTP_PORT` in `.env`). For the canonical tool list and input JSON (for dashboard or credential-api), use **`GET http://localhost:3749/api/toollist`** — see [docs/SANDBOX.md](docs/SANDBOX.md).
+  - **Cursor (STDIO):** Add this server in Cursor MCP settings. Example config (replace paths with your absolute paths):
+      ```json
+      "moca-credential": {
+        "url": "http://localhost:3749/mcp",
+        "headers": {
+          "Accept": "application/json, text/event-stream"
+        }
+      }
+      ```
 
-6. **Add the server in Cursor**  
-   In Cursor → Settings → MCP, add a transport that uses the **HTTP** URL. Example (e.g. in `~/.cursor/mcp.json` or Cursor MCP config):
-   ```json
-   "moca-creds": {
-     "url": "http://localhost:3749/mcp",
-     "headers": {
-       "Accept": "application/json, text/event-stream"
-     },
-     "env": {
-       "CREDENTIAL_MCP_ENVIRONMENT": "staging", // production -> testnet
-       "CREDENTIAL_MCP_PRIVATE_KEY": "<64-hex-chars-optional-for-on-chain-tools>"
-     }
-   }
-   ```
-   Use your real env values; never commit the private key. Omit `CREDENTIAL_MCP_PRIVATE_KEY` if you only need schema/program/pricing (no stake, set price, or payments).
-
-7. **Connect in Cursor**  
-   Click **Connect** or **Start** next to the server. For HTTP, complete the browser sign-in if prompted. Session is set by connecting; there are no auth tools to call.
-
-**Alternative (STDIO):** To run the server as a spawned process instead of HTTP, use a `command`/`args` config and point Cursor at `dist/index.js`. See [mcp-config.example.json](mcp-config.example.json).
+6. **Connect in Cursor**  
+   Click **Connect** or **Start** next to the server. For HTTP, complete the browser sign-in. There are no auth tools to call—session is set by connecting.
 
 ---
 

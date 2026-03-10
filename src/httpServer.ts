@@ -15,6 +15,7 @@ import { createCredentialOAuthProvider, getBaseUrl } from './auth/credentialOAut
 import { bearerOrKeyAuth, isKeyBasedAuthAvailable } from './auth/bearerOrKeyAuth.js';
 import { handleOAuthCallback } from './oauth/callback.js';
 import { asyncLocalStorage } from './auth/requestContext.js';
+import { getToolsList } from './server/toolRegistry.js';
 
 const PORT = Number(process.env.MCP_HTTP_PORT) || 3749;
 const baseUrl = getBaseUrl();
@@ -56,10 +57,16 @@ app.get('/', (_req, res) => {
     'Animoca Credential MCP server is running.\n\n' +
       'Endpoints:\n' +
       '  GET  /                             – this page\n' +
+      '  GET  /api/toollist                 – tool list (name, description, inputSchema) for dashboard/API\n' +
       '  GET  /mcp                          – MCP (requires Bearer token)\n' +
       '  GET  /.well-known/oauth-authorization-server – OAuth discovery\n' +
       '  GET  /oauth/login                 – OAuth login page\n'
   );
+});
+
+app.get('/api/toollist', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.json({ tools: getToolsList() });
 });
 
 // When CREDENTIAL_MCP_PRIVATE_KEY or CREDENTIAL_MCP_SEED_PHRASE is set, skip OAuth discovery
