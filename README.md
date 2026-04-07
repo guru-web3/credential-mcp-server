@@ -1,265 +1,271 @@
 # Animoca Credential MCP Server
 
-Use **natural language** in Cursor (or other MCP clients) to manage AIR credentials: create schemas, set pricing, create issuance and verification programs, and deploy. No need to remember tool names—just describe what you want.
+An MCP (Model Context Protocol) server that brings AI-powered Web3 credential management to Cursor, Claude, and other MCP-compatible clients. It exposes 21 tools -- from schema creation and pricing configuration to on-chain staking and x402-gated payments -- as natural-language actions that an AI agent can execute against the AIR/MOCA ecosystem. No dashboards, no context-switching; just describe what you need and the agent handles the rest.
+
+Built by [Guru Ramu](https://github.com/gururamu).
 
 ---
 
-## Clone and run the server
+## Features
 
-1. **Clone the repo**
-   ```bash
-   git clone <repo-url>
-   cd credential-mcp-server
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Configure environment**  
-   Copy `.env.example` to `.env` and set at least `CREDENTIAL_MCP_ENVIRONMENT` (`sandbox` | `staging` | `production`). The API signature key defaults to the same value as the Credential Dashboard; set `CREDENTIAL_API_SIGNATURE_KEY` only to override. Do not commit `.env`. Optional: `CREDENTIAL_MCP_DEBUG=1` for verbose logging; `CREDENTIAL_MCP_PRIVATE_KEY` for on-chain tools (see [Private key and on-chain wallet](#private-key-and-on-chain-wallet)).
-
-4. **Build**
-   ```bash
-   pnpm run build
-   ```
-
-5. **Run the HTTP server (recommended)**  
-   In the repo directory:
-   ```bash
-   pnpm run run:server
-   ```
-   Default endpoint: `http://localhost:3749/mcp`. Override port with `MCP_HTTP_PORT` in `.env`.
-
-6. **Add the server in Cursor**  
-   In Cursor → Settings → MCP, add a transport that uses the **HTTP** URL. Example (e.g. in `~/.cursor/mcp.json` or Cursor MCP config):
-   ```json
-   "moca-creds": {
-     "url": "http://localhost:3749/mcp",
-     "headers": {
-       "Accept": "application/json, text/event-stream"
-     },
-     "env": {
-       "CREDENTIAL_MCP_ENVIRONMENT": "staging", // production -> testnet
-       "CREDENTIAL_MCP_PRIVATE_KEY": "<64-hex-chars-optional-for-on-chain-tools>"
-     }
-   }
-   ```
-   Use your real env values; never commit the private key. Omit `CREDENTIAL_MCP_PRIVATE_KEY` if you only need schema/program/pricing (no stake, set price, or payments).
-
-7. **Connect in Cursor**  
-   Click **Connect** or **Start** next to the server. For HTTP, complete the browser sign-in if prompted. Session is set by connecting; there are no auth tools to call.
-
-**Alternative (STDIO):** To run the server as a spawned process instead of HTTP, use a `command`/`args` config and point Cursor at `dist/index.js`. See [mcp-config.example.json](mcp-config.example.json).
+- **21 MCP tools** accessible via natural language in Cursor, Claude Desktop, or any MCP client
+- **Full credential lifecycle**: schema creation, pricing setup, credential template management, verification program creation and deployment
+- **Private-key authentication** using P-256 ECDSA signatures -- no OAuth browser flow required for STDIO mode
+- **On-chain operations** via viem + smart contracts on MOCA Chain: stake/unstake MOCA, set verification price, deposit/withdraw USD8, claim issuer fees
+- **x402 payment protocol**: AI agents call x402-gated APIs with automatic payment handling using EIP-3009 `transferWithAuthorization`
+- **Dual transport**: STDIO for Cursor/Claude Desktop, Streamable HTTP for remote and web-based clients
+- **Signer app** (Next.js): browser-based companion for on-chain signing when a local private key is not available
+- **Central tool registry**: single-file registration of name, schema, and handler -- no scattered switch statements
+- **Code quality**: ESLint 9 flat config + Prettier, with validation tests for every tool
 
 ---
 
-## Private key and on-chain wallet
+## Architecture
 
-This repo can use a **private key** (or seed phrase) so the MCP server can perform on-chain actions without opening the signer app or dashboard.
+```mermaid
+flowchart LR
+    subgraph Client
+        A[Cursor / Claude Desktop]
+    end
 
-| What | Where | Security |
-|------|--------|----------|
-| **Private key** | Set `CREDENTIAL_MCP_PRIVATE_KEY` in the server env (e.g. `.env` in this repo, or Cursor MCP → your server → **env**). | **Never commit** `.env` or any file containing the key. `.env` is in `.gitignore`. Use a **dedicated, low-value** wallet for MCP only. |
-| **Seed phrase** | Alternatively set `CREDENTIAL_MCP_SEED_PHRASE` (and optionally `CREDENTIAL_MCP_ACCOUNT_INDEX`, default `0`). | Same as above: env only, never commit, dedicated wallet. |
-| **Chain config** | `MOCA_RPC_URL`, `MOCA_CHAIN_ID`, `MOCA_PAYMENTS_CONTRACT`, `MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS`. Auto-set from `CREDENTIAL_MCP_ENVIRONMENT` (aligned with credential-dashboard: devnet for staging/sandbox, testnet for production); override in `.env` if needed. | No secrets; safe to document. |
+    subgraph MCP Server
+        B[Tool Registry]
+        C[Auth Layer<br/>P-256 Key &#124; OAuth]
+        D[Chain Module<br/>viem]
+        E[x402 Module<br/>payingFetch]
+    end
 
-**Tools that require the private key (or seed):**  
-`credential_set_price`, `credential_setup_pricing` (when `priceUsd` > 0), `credential_payment_deposit`, `credential_payment_withdraw`, `credential_payment_claim_fees`, `credential_stake_moca`, `credential_unstake_moca`, `credential_claim_unstake_moca`.
+    subgraph External Services
+        F[AIR Credential API]
+        G[MOCA Chain<br/>Payments &#124; Staking]
+        H[x402-Gated APIs]
+    end
 
----
-
-### For AI / models (instructions)
-
-- **Authentication:** There are no auth tools. The user must **connect** to the MCP server (Cursor: click **Connect** or **Start** next to the server). For HTTP transport, they complete the browser sign-in. Session (issuerId, verifierId, tokens) is set from that; do not suggest calling any "credential_authenticate" or "credential_get_login_challenge" tool.
-- **Recommended order:** (1) User connects. (2) `credential_create_schema` (schemaName, schemaType, dataPoints). (3) `credential_create_program` (schemaId, optional dates, issueMax, complianceAccessKeyEnabled). (4) `credential_setup_pricing` (schemaId, pricingModel: "each_attempt" | "pay_on_success", optional priceUsd, complianceAccessKeyEnabled). (5) `credential_create_verification_programs` (schemaId, programs with conditions). Schema is verified automatically before pricing and program creation.
-- **Tool purposes:** Use `credential_docs` when the user asks how to set up or verify credentials; it returns step-by-step markdown aligned with [AIR Kit Quickstart 2 (Issue Credentials)](https://docs.moca.network/airkit/quickstart/issue-credentials) and [Quickstart 3 (Verify Credentials)](https://docs.moca.network/airkit/quickstart/verify-credentials), including production standards (JWT on backend, env for secrets). Other tools: create_schema, create_program, setup_pricing, create_verification_programs, list_* (schemas, templates, programs), template_info, issuance_app_config, verifier_app_config, app_steps, configure_issuer_jwks.
-
----
-
-**Key-based auth (no "Needs authentication")**  
-If you set `CREDENTIAL_MCP_PRIVATE_KEY` or `CREDENTIAL_MCP_SEED_PHRASE` in the **server's** environment (e.g. in a `.env` file in this repo, or in the process that runs the HTTP server), the server does **not** expose OAuth discovery. Cursor will not show "Needs authentication" or "Connect"; each request to `/mcp` is authenticated using the key. For HTTP, the key must be in the **server's** env (Cursor's MCP "env" is for the client and is not sent to a remote HTTP server). For STDIO, Cursor passes env to the spawned process, so you can put the key in Cursor's MCP config `env`.
-
----
-
-### 3. Ask in natural language
-
-After auth, you can say things like:
-
-- *“Create a schema for age verification with an integer field called age.”*
-- *“Set pricing for this schema to pay on success, no extra fee.”*
-- *“Create an issuance program for the last schema I created.”*
-- *“Create a verification program that checks age is at least 18.”*
-- *“List my verification programs so I can get the program ID for my app.”*
-- *“List my credential templates.”*
-- *“Show me the steps to issue and verify credentials in my app.”*
-
-The AI will pick the right tools and parameters. You don’t need to know tool names or JSON shapes.
+    A -- STDIO / HTTP --> B
+    B --> C
+    C --> F
+    B --> D
+    D --> G
+    B --> E
+    E --> H
+```
 
 ---
 
-## What you can ask (natural language examples)
+## Quick Start
 
-| You say | What the MCP does |
-|--------|--------------------|
-| *“Create a schema for NFT holders with a field numberOfNfts (integer).”* | `credential_create_schema` |
-| *“Set pricing for this schema: pay on success, no USD fee.”* | `credential_setup_pricing` |
-| *“Create an issuance program (credential template) for my last schema.”* | `credential_create_program` |
-| *“Create verification programs: age_over_18 where age >= 18.”* | `credential_create_verification_programs` |
-| *“Create three verification programs: bronze (volume >= 1000), silver (>= 10000), gold (>= 100000).”* | `credential_create_verification_programs` with multiple programs |
-| *“List my verification programs.”* | `credential_list_programs` |
-| *“List my credential templates.”* | `credential_list_templates` |
-| *“List my schemas.”* | `credential_list_schemas` |
-| *“How do I issue and verify credentials in my app?”* | `credential_docs` (issuance + verification steps; aligned with AIR Kit Quickstart 2 & 3, production standards) |
-| *“I want to deploy the issuance app; which repo and branch?”* | `credential_template_info` (issuance; default branch mcp-template or sample/passport-age) |
-| *“Generate .env for my issuance app and tell me how to generate the keys.”* | `credential_issuance_app_config` (after connect; returns snippet + key-generation instructions) |
-| *“Give me the steps to clone, install, and deploy the issuance template.”* | `credential_app_steps` (issuance) |
+### Prerequisites
 
+- Node.js >= 18
+- pnpm (recommended) or npm
 
-Authentication is done by **connecting** to the MCP server in Cursor (Connect/Start or HTTP OAuth); there are no auth tools.
+### 1. Clone and install
 
-**Production standards:** Issuance and verification flows follow [AIR Kit Quickstart 2 (Issue Credentials)](https://docs.moca.network/airkit/quickstart/issue-credentials) and [Quickstart 3 (Verify Credentials)](https://docs.moca.network/airkit/quickstart/verify-credentials). Use JWT on the backend, keep secrets in env, configure JWKS in the Developer Dashboard. See [docs/QUICKSTART-ISSUE-VERIFY.md](docs/QUICKSTART-ISSUE-VERIFY.md) for MCP ↔ quickstart mapping.
+```bash
+git clone https://github.com/anthropics/credential-mcp-server.git
+cd credential-mcp-server
+pnpm install
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and set the required values:
+
+| Variable | Purpose |
+|---|---|
+| `CREDENTIAL_MCP_ENVIRONMENT` | `sandbox`, `staging`, or `production` |
+| `CREDENTIAL_MCP_PRIVATE_KEY` | Wallet private key (hex) -- enables on-chain + x402 tools |
+| `CREDENTIAL_API_SIGNATURE_KEY` | API signature key (optional override) |
+
+All chain-related variables (`MOCA_RPC_URL`, `MOCA_CHAIN_ID`, contract addresses) are auto-derived from the environment setting. Override them only when needed.
+
+### 3. Build
+
+```bash
+pnpm build
+```
+
+### 4. Run
+
+**STDIO mode** (Cursor / Claude Desktop):
+
+```bash
+node dist/index.js
+```
+
+**HTTP mode** (remote clients, browser):
+
+```bash
+node dist/httpServer.js
+# Listening on http://localhost:3749
+```
 
 ---
 
-## Available tools (for the AI)
+## MCP Tools Reference
+
+### Credential Management
 
 | Tool | Purpose |
-| `credential_create_schema` | Create and publish a schema (name, type, data points). |
-| `credential_setup_pricing` | Set pricing model for a schema (e.g. pay_on_success, optional price). API stores schema, pricing model, and CAK only; the numeric price is set **on-chain**. When `priceUsd` is a positive number (> 0), the result includes **`setPriceUrl`** — open that URL in a browser to set the price on-chain (signer app /set-price; connect wallet on MOCA and confirm). If `setPriceUrl` is absent, use Credential Dashboard → Pricing → Define schema price. |
-| `credential_create_program` | Create an issuance program (credential template) for a schema. |
-| `credential_create_verification_programs` | Create (and deploy) verification programs with conditions. |
-| `credential_list_schemas` | List your (or others’) schemas. |
-| `credential_list_templates` | List issuance programs (templates) for use as credentialId. |
-| `credential_list_programs` | List verification programs for use as programId in verifyCredential. |
-| `credential_docs` | Get issuance and/or verification flow docs; aligned with [Quickstart 2](https://docs.moca.network/airkit/quickstart/issue-credentials) & [Quickstart 3](https://docs.moca.network/airkit/quickstart/verify-credentials), production standards. |
-| `credential_template_info` | Get repo URL, branch, and clone command for issuance or verifier template (no auth). Default issuance branch: `mcp-template`; also `sample/passport-age`. |
-| `credential_issuance_app_config` | Generate .env snippet for issuance app from session. Includes instructions to auto-generate PARTNER_PRIVATE_KEY and public key (no manual steps). JWKS kid defaults to partner ID. |
-| `credential_verifier_app_config` | Generate .env snippet for verifier app from session. |
-| `credential_app_steps` | Get ordered steps: clone → install → generate keys + env → dev → build → deploy → set JWKS URL in dashboard. |
-| `credential_configure_issuer_jwks` | Set JWKS URL and whitelist domain in dashboard from a single origin (requires auth). |
+|---|---|
+| `credential_create_schema` | Create and publish a new credential schema with custom data points |
+| `credential_setup_pricing` | Configure pricing model (per-attempt or pay-on-success) for a schema |
+| `credential_create_program` | Create an issuance program (credential template) from a schema |
+| `credential_create_verification_programs` | Create and deploy verification programs with condition-based rules |
+| `credential_list_schemas` | List credential schemas (own or others) |
+| `credential_list_templates` | List credential templates (issuance programs) |
+| `credential_list_programs` | List verification programs |
+| `credential_docs` | Get step-by-step documentation for issuance and/or verification flows |
+
+### App Scaffolding
+
+| Tool | Purpose |
+|---|---|
+| `credential_template_info` | Get repo URL, branch, and clone command for issuance/verifier template apps |
+| `credential_issuance_app_config` | Generate `.env` configuration for the issuance template |
+| `credential_verifier_app_config` | Generate `.env` configuration for the verifier template |
+| `credential_app_steps` | Get ordered develop-to-deploy steps for issuance or verifier apps |
+| `credential_configure_issuer_jwks` | Set JWKS URL and whitelist domain for credential issuance |
 
 ---
 
-## Develop to deploy (issuance / verifier app)
+## On-Chain Tools
 
-After creating schemas and programs, you can get the template repo, env config, and a checklist so the AI (or you) can clone, install, generate keys, and deploy with no manual key generation:
+These tools interact directly with smart contracts on MOCA Chain via viem. They require `CREDENTIAL_MCP_PRIVATE_KEY` (or `CREDENTIAL_MCP_SEED_PHRASE`) to be set.
 
-1. **“I want to deploy the issuance app”** or **“Set me up with the sample branch.”**  
-2. AI can call `credential_template_info` (appType: `issuance`, default branch: `mcp-template` or optional e.g. `sample/passport-age`) → repo URL and clone command with branch.  
-3. AI calls `credential_issuance_app_config` (after connect) → env snippet and **instructions to auto-generate** PARTNER_PRIVATE_KEY and NEXT_PUBLIC_PARTNER_PUBLIC_KEY (openssl commands); agent runs them and writes .env.local.  
-4. AI calls `credential_app_steps` (appType: `issuance`) → ordered checklist.  
-5. AI runs: clone with branch → install → paste env (with generated keys) → `pnpm dev` → optionally build and deploy.  
-6. **Post-deploy:** Set JWKS URL in the credential Partner Dashboard to `https://<your-deployed-origin>/jwks.json` (kid defaults to partner ID). Whitelist your domain.
+| Tool | Purpose |
+|---|---|
+| `credential_set_price` | Set or update verification price on-chain (PaymentsController) |
+| `credential_payment_deposit` | Deposit USD8 to a verifier's on-chain balance |
+| `credential_payment_withdraw` | Withdraw USD8 from a verifier's on-chain balance |
+| `credential_payment_claim_fees` | Claim accumulated issuer fees from the PaymentsController |
+| `credential_stake_moca` | Stake native MOCA to increase issuer usage quota |
+| `credential_unstake_moca` | Initiate MOCA unstake (subject to delay period) |
+| `credential_claim_unstake_moca` | Claim MOCA after the unstake delay has elapsed |
 
-Same flow for verifier: `credential_template_info` (verifier), `credential_verifier_app_config`, `credential_app_steps` (verifier).
+### Example: natural-language on-chain operation
 
----
+> "Stake 100 MOCA for my issuer"
 
-## Typical flow (natural language)
-
-1. **Connect** to the MCP server in Cursor (click Connect/Start). For HTTP server, complete the browser sign-in. No auth tool to call.  
-2. **“Create a schema for [X] with fields [Y].”**  
-3. **“Set pricing: pay on success.”** (or “per verification $0.50”)  
-4. **“Create an issuance program for that schema.”**  
-5. **“Create a verification program that [condition].”** (e.g. age >= 18)  
-6. **“List my verification programs.”** → Copy programId for your app.  
-7. **“How do I verify in my app?”** → Use `credential_docs` and programId in AIR Kit.
+The agent resolves `credential_stake_moca`, builds and signs the transaction using your configured wallet, submits it to MOCA Chain, and returns the transaction hash.
 
 ---
 
-## On-chain actions (signer app and dashboard)
+## x402 Payment Protocol
 
-When the MCP server does **not** have a chain wallet in env (see below), these actions require a wallet in the browser:
+The `x402_pay_and_verify` tool enables AI agents to call x402-gated HTTP endpoints with automatic payment. Under the hood it uses `@x402/fetch` to detect `402 Payment Required` responses, construct an EIP-3009 `transferWithAuthorization` signature, and retry the request with the payment proof attached.
 
-| Action | Where | What |
-|--------|--------|------|
-| **Login** | Signer app (main page) | Sign a login message (no contract call). Used for MCP auth. |
-| **Set schema price** | Signer app **/set-price** or Credential Dashboard | **Signer:** Open `/set-price?price=0.1&schemaId=...` (or use the link returned by `credential_setup_pricing` when you pass `priceUsd`). Connect wallet on MOCA, confirm `createSchema(fee)` or `updateSchemaFee(schemaId, fee)`. **Dashboard:** Pricing → Define schema price → set USD8 and confirm. |
-| **Withdraw / claim fees** | Credential Dashboard only | Payout page: withdraw (verifier) or claim fees (issuer) via payments controller contract. Not exposed in the signer app. |
+| Tool | Purpose |
+|---|---|
+| `x402_pay_and_verify` | Call any x402-protected API with transparent on-chain payment |
 
-The signer app supports **Set schema price** so you can complete the on-chain step after `credential_setup_pricing` (which only registers schema + pricing model + CAK with the API). Configure the signer with `NEXT_PUBLIC_PAYMENT_CHAIN_ID` and `NEXT_PUBLIC_PAYMENT_CONTROLLER_ADDRESS` (see `signer-app/.env.example`).
+**How it works:**
 
-### On-chain tools (private key in env)
+1. The agent calls the target URL via `payingFetch`.
+2. If the server responds with `402`, the x402 SDK reads the payment requirements from the response header.
+3. A `transferWithAuthorization` signature is constructed and sent as a payment proof.
+4. The server verifies the payment on-chain and returns the protected resource.
 
-If you set **CREDENTIAL_MCP_PRIVATE_KEY** or **CREDENTIAL_MCP_SEED_PHRASE** (and chain env: **MOCA_RPC_URL**, **MOCA_CHAIN_ID**, **MOCA_PAYMENTS_CONTRACT**, optionally **MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS**) in the MCP server env (e.g. in Cursor MCP settings `env`), the server can perform on-chain operations without the user opening the signer or dashboard. When either key env is set, the server **auto-authenticates** on first use (e.g. when you run `credential_setup_pricing` or `credential_list_schemas`), so you do not need to call the authenticate tool or complete OAuth first.
-
-- **credential_setup_pricing** with `priceUsd` > 0 will set the price on-chain automatically and return `txHash` (no `setPriceUrl` needed).
-- **credential_set_price** – Set or update verification price on-chain (createSchema / updateSchemaFee).
-- **credential_payment_deposit** – Verifier top-up (deposit USD8).
-- **credential_payment_withdraw** – Verifier withdraw USD8.
-- **credential_payment_claim_fees** – Issuer claim fees.
-- **credential_stake_moca** – Stake native MOCA for issuer usage quota (tiers).
-- **credential_unstake_moca** – Initiate unstake; after delay use **credential_claim_unstake_moca** with the claimable timestamp(s).
-
-**Security:** Use a dedicated, low-value wallet for MCP. Never commit private keys or seed phrases. Set them only in the MCP client `env` (e.g. Cursor → Settings → MCP → your server → env).
-
-## Sample prompts
-
-Copy-paste these into Cursor (or any MCP client) to test tool choice and behavior. Full test scenarios by flow are in [docs/TESTING-QUERIES.md](docs/TESTING-QUERIES.md).
-
-### Manual and AI testing
-
-| Prompt | Expected behavior |
-|--------|-------------------|
-| *"Create a schema named Trading Volume with schema type TradingVolumeCredential, attributes: totalVolume (integer), platform (string), version 1.0."* | `credential_create_schema` with valid data; schemaId returned. |
-| *"Create a schema with title only, no schema type or version."* | Refusal or validation error (missing schemaType/version/dataPoints). |
-| *"List my credential schemas."* / *"List my verification programs."* | After auth: list or empty list. Before auth: clear "authenticate first" message. |
-
-### By flow (quick reference)
-
-- **Schema:** *"Create a schema with one string attribute …"* / *"... one integer …"* / *"... one number …"* / *"... one boolean …"*; or multiple data points with descriptions.
-- **Pricing:** *"Set pricing to charge for all verification attempts"* → `each_attempt`; *"charge only for successful verifications"* → `pay_on_success`; *"Set price to 0.1 USD"* → priceUsd; *"Enable CAK"* → complianceAccessKeyEnabled.
-- **Program (issuance):** *"Create program with start date 2025-01-01 and end date 2025-12-31"*; *"max issuance 1000"*; *"unlimited issuance"*; *"CAK enabled"*.
-- **Verification programs:** Conditions by type (string, integer, number, boolean); operators map to =, !=, >, <, >=, <=. See [docs/TESTING-QUERIES.md](docs/TESTING-QUERIES.md) for payload examples and Dashboard UI ↔ MCP mapping.
-
-Full test scenarios (schema, pricing, programs, verification, Dashboard UI ↔ MCP mapping) are in [docs/TESTING-QUERIES.md](docs/TESTING-QUERIES.md).
-
-### On-chain (requires private key in env)
-
-- *"Set verification price to 0.1 USD on-chain."*
-- *"Set up pricing for my last schema: pay on success with 0.2 USD."*
-- *"Deposit 10 USD8 for verifier 0xVERIFIER_ADDRESS."*
-- *"Withdraw 5 USD8 for verifier 0xVERIFIER_ADDRESS."*
-- *"Claim fees for issuer 0xISSUER_ADDRESS."*
-- *"Stake 10 MOCA for issuer usage quota."*
-- *"Initiate unstake of 5 MOCA."*
-- *"Claim unstaked MOCA for timestamps [1234567890]."* (after delay)
+No manual token approvals or pre-funding steps are needed beyond having USD8 in the wallet.
 
 ---
 
-## Queries to run (issuance setup)
+## Try It in Cursor
 
-Copy-paste one of these into Cursor (with the **animoca-credentials** MCP connected) to run the step-wise issuance setup. See [docs/mcp-issuance.md](docs/mcp-issuance.md) and [docs/TOOLS.md](docs/TOOLS.md) for full flow and default behaviors.
+Add this to your Cursor MCP configuration (`.cursor/mcp.json`):
 
-**Example 1 – Default (schema created today, full flow with mock)**  
-Use when you have a schema created today and want clone → env → mock → dev → tunnel → JWKS → test:
-
-```
-Use animoca-credentials MCP if found. Query for the schema created today—only one will be there. I want to set up the issuance app: find an issuance program for this schema, then clone the template repo, generate .env.local with credential_issuance_app_config (so dataPoints from the schema are in the config for mocking), run generate-keys and set env. Don't edit the user-data route when you're only mocking. Rely on the template's built-in mock driven by NEXT_PUBLIC_CREDENTIALS_CONFIG and its dataPoints. Mock by type: string → "test", integer/number → 0, boolean → false. Add a TODO for when you plug in a real API later in app/(home)/api/user/user-data/route.ts. Run the app (pnpm dev) on port 3000—kill anything already using that port. Start pnpm tunnel or npx instatunnel 3000. Pick the tunnel URL only after both the app and the tunnel are running. Call credential_configure_issuer_jwks with the tunnel URL (not localhost), then open http://localhost:3000 to test.
-```
-
-**Example 2 – When you have a credential template ID**  
-Replace `YOUR_TEMPLATE_ID` with your issuance program ID:
-
-```
-Use animoca-credentials MCP if found. I have credential template ID YOUR_TEMPLATE_ID. Set up the issuance app: clone the template repo, generate .env.local with credential_issuance_app_config (dataPoints for mocking), run generate-keys and set env. Don't edit the user-data route; use the built-in mock. Run pnpm dev on port 3000 (kill if needed), start npx instatunnel 3000, pick the tunnel URL after both are running, call credential_configure_issuer_jwks with that URL, then open http://localhost:3000 to test.
-```
-
-**Example 3 – Short form (template ID)**  
-```
-Using credential template ID YOUR_TEMPLATE_ID: clone the issuance template, generate .env.local from credential_issuance_app_config, generate-keys, run dev on 3000, npx instatunnel 3000, configure JWKS with the tunnel URL (after both are running), open localhost:3000 to test.
+```json
+{
+  "mcpServers": {
+    "animoca-credentials": {
+      "command": "node",
+      "args": ["/absolute/path/to/credential-mcp-server/dist/index.js"],
+      "env": {
+        "CREDENTIAL_MCP_ENVIRONMENT": "staging",
+        "CREDENTIAL_MCP_PRIVATE_KEY": "0x...",
+        "CREDENTIAL_API_SIGNATURE_KEY": "your-api-signature-key"
+      }
+    }
+  }
+}
 ```
 
-**Example 4 – Just the steps (no schema/template specified)**  
+Replace the paths and keys with your actual values. Once configured, open Cursor and try:
+
+> "Create a credential schema called employee-badge with fields: name (string), department (string), clearanceLevel (integer)"
+
+> "Set up free pricing for all verifications on my latest schema"
+
+> "Deposit 10 USD8 to my verifier balance"
+
+---
+
+## Project Structure
+
 ```
-Set up the credential issuance app end-to-end: clone the template, get .env from credential_issuance_app_config and generate-keys, run dev on port 3000, start the tunnel (npx instatunnel 3000), configure JWKS with the tunnel URL once both are running, then open http://localhost:3000 to test. Use the built-in mock (don't edit user-data route).
+credential-mcp-server/
+  src/
+    index.ts              # STDIO entry point
+    httpServer.ts         # HTTP/SSE entry point
+    config.ts             # Environment and chain defaults
+    server/
+      createMcpServer.ts  # MCP server factory
+      toolRegistry.ts     # Central tool registry (single source of truth)
+    tools/                # One file per MCP tool
+    chain/                # viem wallet, contract ABIs, gas helpers
+    auth/                 # P-256 key auth, OAuth provider, session
+    utils/                # API client, JWT, x402 helpers
+  signer-app/             # Next.js companion for browser-based signing
+  tests/                  # Validation tests for each tool
+  schemas/                # Example credential schema JSON files
+  bin/                    # CLI entry points
 ```
 
-**Example 5 – Schema ID only (find program first)**  
-Replace `YOUR_SCHEMA_ID` if you know it:
+---
 
+## Development
+
+```bash
+# Watch mode (recompile on change)
+pnpm watch
+
+# Lint
+pnpm lint
+pnpm lint:fix
+
+# Format
+pnpm format
+
+# Run tests
+pnpm test
+
+# MCP Inspector (interactive tool testing)
+pnpm inspector
 ```
-Use animoca-credentials MCP if found. I have schema ID YOUR_SCHEMA_ID. Find an issuance program for this schema, then set up the issuance app: clone the template, generate .env.local with credential_issuance_app_config, generate-keys, run dev, tunnel (npx instatunnel 3000), configure JWKS with the tunnel URL (after both app and tunnel are running), open http://localhost:3000 to test. Use the built-in mock; add a TODO in app/(home)/api/user/user-data/route.ts for a real API later.
-```
+
+---
+
+## Built With
+
+| Technology | Role |
+|---|---|
+| [TypeScript](https://www.typescriptlang.org/) | Language |
+| [MCP SDK](https://github.com/modelcontextprotocol/typescript-sdk) | Model Context Protocol server framework |
+| [viem](https://viem.sh/) | Ethereum/MOCA Chain interactions and wallet management |
+| [Express](https://expressjs.com/) | HTTP transport layer |
+| [Next.js](https://nextjs.org/) | Signer app for browser-based on-chain actions |
+| [zod](https://zod.dev/) | Runtime schema validation for tool inputs |
+| [@x402/fetch](https://github.com/coinbase/x402) | x402 payment protocol client |
+| [@x402/evm](https://github.com/coinbase/x402) | EVM payment verification and EIP-3009 signatures |
+| [jose](https://github.com/panva/jose) | JWT/JWK operations for P-256 authentication |
+| [ESLint](https://eslint.org/) + [Prettier](https://prettier.io/) | Code quality and formatting |
+
+---
+
+## License
+
+MIT
