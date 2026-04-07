@@ -26,10 +26,10 @@ const MOCA_CHAIN_API_URLS: Record<ConfigEnvironment, string> = {
 
 /** Devnet: staging/sandbox (credential-dashboard .env.uat / .env.development). */
 const MOCA_DEVNET = {
-  rpcUrl: 'https://devnet-rpc.mocachain.org',
-  chainId: 5151,
-  paymentsContract: '0x56ad210e36c8424d1d1cc5166b3f9fa4c03a8942',
-  issuerStakingController: '0x238e4AA1a6CF2A774079E73019402Beb03F3a7b5',
+  rpcUrl: 'https://testnet-rpc.mocachain.org',
+  chainId: 222888,
+  paymentsContract: '0x8dE288d0fdfe3F165fCB305C7E0D812B05294C27',
+  issuerStakingController: '0xc625FcE7bfd12f024584e0f9f215F5E76c850d32',
 } as const;
 
 /** Testnet: production (credential-dashboard .env.sandbox-testnet, wagmi mocaTestnet id 222888). */

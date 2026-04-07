@@ -10,7 +10,7 @@ import { createSchema } from './tools/create-schema.js';
 import { createCredentialTemplate } from './tools/create-credential-template.js';
 import { setupPricing } from './tools/setup-pricing.js';
 import { queryPaymentSchema } from './tools/query-payment-schema.js';
-import { createVerificationPrograms } from './tools/create-programs.js';
+import { createVerificationPrograms, CreateProgramsArgsSchema } from './tools/create-programs.js';
 
 async function createSampleIssuer() {
   console.log('🚀 Creating Sample Issuer - NFT Holder Credential System\n');
@@ -103,7 +103,7 @@ async function createSampleIssuer() {
 
     // Step 5: Create Verification Programs
     console.log('📝 Step 5: Creating Verification Programs');
-    const programsResult = await createVerificationPrograms({
+    const programsResult = await createVerificationPrograms(CreateProgramsArgsSchema.parse({
       deploy: true,
       programs: [
         {
@@ -125,7 +125,7 @@ async function createSampleIssuer() {
           ],
         },
       ],
-    });
+    }));
     console.log('✅ Verification programs created successfully!');
     programsResult.createdPrograms.forEach((prog, idx) => {
       console.log(`   ${idx + 1}. ${prog.programName}: ${prog.programId}`);

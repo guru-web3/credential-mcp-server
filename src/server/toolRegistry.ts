@@ -133,6 +133,22 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
       properties: {
         schemaId: { type: 'string' as const, description: 'Schema ID (uses last created schema if not provided)' },
         deploy: { type: 'boolean' as const, description: 'If true (default), deploy each program after create so it becomes active.' },
+        pricingModel: {
+          type: 'string' as const,
+          enum: ['each_attempt', 'pay_on_success'],
+          description:
+            'Pricing model to query from payment API before creating programs. Default: pay_on_success. Programs will not be created if no pricing config exists for this model.',
+        },
+        defaultCredentialIssuerDid: {
+          type: 'string' as const,
+          description:
+            'Optional. Credential issuer DID for issuerDids and zkQuery allowedIssuers when it differs from the MCP session issuer (e.g. did:air:id:testnet:…).',
+        },
+        defaultIssuerPricingId: {
+          type: ['string', 'null'] as const,
+          description:
+            'Optional. Explicit override for issuerDids.pricingId. When omitted, auto-resolved from the payment API.',
+        },
         programs: {
           type: 'array' as const,
           items: {

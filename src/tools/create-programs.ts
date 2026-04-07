@@ -1,7 +1,9 @@
 import { z } from 'zod';
+import axios from 'axios';
 import CryptoJS from 'crypto-js';
 import { session } from '../session.js';
 import { apiRequest } from '../utils/api.js';
+import { getMocaChainApiUrl, fromSessionEnvironment, getCredentialApiSignatureKey } from '../config.js';
 
 const OPERATORS = ['>', '>=', '<', '<=', '=', '!='] as const;
 const operatorEnum = z.enum(OPERATORS);
@@ -9,6 +11,17 @@ const operatorEnum = z.enum(OPERATORS);
 export const CreateProgramsArgsSchema = z.object({
   schemaId: z.string().optional().describe('Schema ID (uses last created schema if not provided)'),
   deploy: z.coerce.boolean().optional().default(true).describe('If true (default), deploy each program after create (status DEPLOYING_W) so it becomes active.'),
+  pricingModel: z.enum(['each_attempt', 'pay_on_success']).optional().default('pay_on_success')
+    .describe('Pricing model to look up. Defaults to pay_on_success.'),
+  defaultCredentialIssuerDid: z
+    .string()
+    .optional()
+    .describe('When set, used for issuerDids and zkQuery allowedIssuers instead of session issuerDid'),
+  defaultIssuerPricingId: z
+    .string()
+    .nullable()
+    .optional()
+    .describe('Explicit issuer pricing UUID override; when omitted, auto-resolved from payment API'),
   programs: z.array(z.object({
     programName: z.string().describe('Unique program name (e.g., nft_holder_standard)'),
     conditions: z
@@ -81,25 +94,115 @@ interface SchemeByIdData {
   schemeAttributes?: { uris?: { jsonLdContext?: string } };
 }
 
+interface PricingInfo {
+  id: string;
+  pricingModel: 'each_attempt' | 'pay_on_success';
+  issuerDid: string;
+}
+
+/**
+ * Generate signed headers for the moca-chain payment API (GET requests).
+ * Dashboard uses x-verifier-id (not x-issuer-id) and signs an empty string for GET.
+ */
+function generatePaymentGetHeaders(dashboardToken: string, verifierId: string): Record<string, string> {
+  const timestamp = Date.now().toString();
+  const bodyStr = '';
+  const firstHash = CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(bodyStr)).toString();
+  const combined = `${firstHash}_${timestamp}`;
+  const key = CryptoJS.enc.Utf8.parse(getCredentialApiSignatureKey());
+  const encrypted = CryptoJS.AES.encrypt(
+    CryptoJS.enc.Utf8.parse(combined),
+    key,
+    { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 },
+  );
+  const signature = CryptoJS.SHA256(encrypted.ciphertext).toString();
+
+  return {
+    'accept': 'application/json, text/plain, */*',
+    'Content-Type': 'application/json',
+    'x-signature': signature,
+    'x-timestamp': timestamp,
+    'x-appversion': 'zkserapi_1.0.0',
+    'x-dashboard-auth': dashboardToken,
+    'x-verifier-id': verifierId,
+  };
+}
+
+/**
+ * Query the payment API for pricing config, exactly as the dashboard does before program/create.
+ * GET /v1/payment/schema/fee?credentialSchemaId=X&pricingModel=Y&sortByFee=ASC
+ */
+async function fetchPricingInfo(
+  schemaId: string,
+  pricingModel: 'each_attempt' | 'pay_on_success',
+): Promise<PricingInfo | null> {
+  const dashboardToken = session.get('dashboardToken');
+  const verifierId = session.get('verifierId');
+  const environment = session.get('environment');
+  if (!dashboardToken || !verifierId) return null;
+
+  const paymentApiUrl = getMocaChainApiUrl(fromSessionEnvironment(environment));
+  const headers = generatePaymentGetHeaders(dashboardToken, verifierId);
+
+  try {
+    const response = await axios.get(`${paymentApiUrl}/v1/payment/schema/fee`, {
+      params: { page: 1, limit: 10, credentialSchemaId: schemaId, pricingModel, sortByFee: 'ASC' },
+      headers,
+    });
+    const records = response.data?.data;
+    if (Array.isArray(records) && records.length > 0) {
+      const first = records[0];
+      return { id: first.id, pricingModel: first.pricingModel, issuerDid: first.issuerDid };
+    }
+    return null;
+  } catch (e) {
+    console.error('[DEBUG] fetchPricingInfo failed:', (e as Error).message);
+    return null;
+  }
+}
+
 export async function createVerificationPrograms(args: z.infer<typeof CreateProgramsArgsSchema>) {
   await session.requireAuth();
 
-  const { schemaId: providedSchemaId, deploy: shouldDeploy, programs } = args;
+  const {
+    schemaId: providedSchemaId,
+    deploy: shouldDeploy,
+    programs,
+    pricingModel: requestedPricingModel,
+    defaultCredentialIssuerDid,
+    defaultIssuerPricingId,
+  } = args;
 
   const schemaId = providedSchemaId || session.get('schemaId');
   if (!schemaId) {
     throw new Error('No schema ID provided. Create a schema first or provide schemaId parameter.');
   }
 
-  const issuerDid = session.get('issuerDid');
-  if (!issuerDid) {
+  const sessionIssuerDid = session.get('issuerDid');
+  if (!sessionIssuerDid) {
     throw new Error('No issuer DID found in session. Re-connect to the MCP server to authenticate.');
   }
+
+  const issuerDid = defaultCredentialIssuerDid ?? sessionIssuerDid;
 
   const issuerId = session.get('issuerId');
   const verifierId = session.get('verifierId');
   const apiUrl = session.get('apiUrl');
   if (!apiUrl) throw new Error('No API URL in session. Re-connect to the MCP server to authenticate.');
+
+  // Resolve pricing from the payment API (same as dashboard does before program/create)
+  const pricingInfo = await fetchPricingInfo(schemaId, requestedPricingModel);
+  if (!pricingInfo) {
+    throw new Error(
+      `No pricing configuration found for schema ${schemaId} with pricingModel "${requestedPricingModel}". ` +
+      'Run credential_setup_pricing first to configure pricing for this schema.',
+    );
+  }
+
+  const resolvedPricingModel = pricingInfo.pricingModel;
+  const resolvedPricingId = defaultIssuerPricingId !== undefined ? defaultIssuerPricingId : pricingInfo.id;
+
+  console.log(`[DEBUG] Resolved pricing: model=${resolvedPricingModel}, id=${resolvedPricingId}, apiIssuerDid=${pricingInfo.issuerDid}`);
 
   // Fetch schema by ID so zkQuery uses correct type and context (required for backend validation)
   let schemaType = session.get('schemaType');
@@ -169,9 +272,9 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
           programName: program.programName,
           outChainId: '',
           status: 'CREATED',
-          pricingModel: 'pay_on_success',
+          pricingModel: resolvedPricingModel,
           complianceAccessKeyRequired: 0,
-          issuerDids: [{ did: issuerDid, pricingId: null }],
+          issuerDids: [{ did: issuerDid, pricingId: resolvedPricingId }],
         },
         zkQueryInfoVOS: zkQueryInfoVOSPayload,
       };
