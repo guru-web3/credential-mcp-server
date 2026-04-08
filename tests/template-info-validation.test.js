@@ -30,10 +30,8 @@ describe('TemplateInfoArgsSchema', () => {
     );
   });
 
-  it('rejects invalid appType enum', () => {
-    assert.throws(
-      () => TemplateInfoArgsSchema.parse({ appType: 'dashboard' }),
-      (err) => err.message.includes('enum') || err.message.includes('issuance')
-    );
+  it('normalizes invalid appType to default (issuance)', () => {
+    const result = TemplateInfoArgsSchema.parse({ appType: 'dashboard' });
+    assert.strictEqual(result.appType, 'issuance');
   });
 });

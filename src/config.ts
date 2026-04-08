@@ -24,20 +24,16 @@ const MOCA_CHAIN_API_URLS: Record<ConfigEnvironment, string> = {
   production: 'https://api.mocachain.org',
 };
 
-/** Devnet: staging/sandbox (credential-dashboard .env.uat / .env.development). */
-const MOCA_DEVNET = {
-  rpcUrl: 'https://testnet-rpc.mocachain.org',
-  chainId: 222888,
-  paymentsContract: '0x8dE288d0fdfe3F165fCB305C7E0D812B05294C27',
-  issuerStakingController: '0xc625FcE7bfd12f024584e0f9f215F5E76c850d32',
-} as const;
-
-/** Testnet: production (credential-dashboard .env.sandbox-testnet, wagmi mocaTestnet id 222888). */
+/**
+ * MOCA testnet (chainId 222888): defaults align with credential-dashboard staging
+ * (.env.staging: VITE_APP_MOCA_RPC_URL, VITE_APP_MOCA_PAYMENTS_CONTRACT,
+ * VITE_APP_ISSUER_STAKING_CONTROLLER_ADDRESS). Override with MOCA_* env vars.
+ */
 const MOCA_TESTNET = {
-  rpcUrl: 'https://testnet-rpc.mocachain.org',
+  rpcUrl: 'https://rpc.testnet.mocachain.dev',
   chainId: 222888,
-  paymentsContract: '0x8dE288d0fdfe3F165fCB305C7E0D812B05294C27',
-  issuerStakingController: '0xc625FcE7bfd12f024584e0f9f215F5E76c850d32',
+  paymentsContract: '0xFd44F0336f50d64fEdB0EeEa7BB89BFAbbeFA91c',
+  issuerStakingController: '0x473439A1E11d1B2241318Bdd56b3600a51f4156E',
 } as const;
 
 function getEnv(name: string): string {
@@ -102,39 +98,35 @@ export function fromSessionEnvironment(env: 'development' | 'staging' | 'product
   return env === 'development' ? 'sandbox' : 'staging';
 }
 
-/** MOCA RPC URL: devnet for sandbox/staging, testnet for production. Override with MOCA_RPC_URL. */
-export function getMocaRpcUrl(env?: ConfigEnvironment): string {
+/** MOCA RPC URL. Override with MOCA_RPC_URL. */
+export function getMocaRpcUrl(_env?: ConfigEnvironment): string {
   const override = getEnv('MOCA_RPC_URL');
   if (override) return override;
-  const e = env ?? getConfigEnvironment();
-  return e === 'production' ? MOCA_TESTNET.rpcUrl : MOCA_DEVNET.rpcUrl;
+  return MOCA_TESTNET.rpcUrl;
 }
 
-/** MOCA chain ID: 5151 devnet (sandbox/staging), 222888 testnet (production). Override with MOCA_CHAIN_ID. */
-export function getMocaChainId(env?: ConfigEnvironment): number {
+/** MOCA chain ID (222888 testnet). Override with MOCA_CHAIN_ID. */
+export function getMocaChainId(_env?: ConfigEnvironment): number {
   const override = getEnv('MOCA_CHAIN_ID');
   if (override) {
     const n = parseInt(override, 10);
     if (!Number.isNaN(n)) return n;
   }
-  const e = env ?? getConfigEnvironment();
-  return e === 'production' ? MOCA_TESTNET.chainId : MOCA_DEVNET.chainId;
+  return MOCA_TESTNET.chainId;
 }
 
 /** Payments controller contract address. Override with MOCA_PAYMENTS_CONTRACT. */
-export function getMocaPaymentsContract(env?: ConfigEnvironment): string {
+export function getMocaPaymentsContract(_env?: ConfigEnvironment): string {
   const override = getEnv('MOCA_PAYMENTS_CONTRACT');
   if (override) return override;
-  const e = env ?? getConfigEnvironment();
-  return e === 'production' ? MOCA_TESTNET.paymentsContract : MOCA_DEVNET.paymentsContract;
+  return MOCA_TESTNET.paymentsContract;
 }
 
 /** Issuer staking controller address. Override with MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS. */
-export function getMocaIssuerStakingControllerAddress(env?: ConfigEnvironment): string {
+export function getMocaIssuerStakingControllerAddress(_env?: ConfigEnvironment): string {
   const override = getEnv('MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS');
   if (override) return override;
-  const e = env ?? getConfigEnvironment();
-  return e === 'production' ? MOCA_TESTNET.issuerStakingController : MOCA_DEVNET.issuerStakingController;
+  return MOCA_TESTNET.issuerStakingController;
 }
 
 /** Apply chain env defaults from config so MOCA_* are set when not in .env. Call after dotenv. */

@@ -13,7 +13,10 @@ export const ListVerificationProgramsArgsSchema = z.object({
   size: z.coerce.number().min(1).max(100).default(20).describe('Page size'),
   searchStr: z.string().optional().describe('Optional search string'),
   sortField: z.string().default('uvpi.create_at').describe('Sort field'),
-  order: z.union([z.enum(['asc', 'desc']), z.string().transform((s) => (String(s).toLowerCase() === 'asc' ? 'asc' : 'desc'))]).default('desc').describe('Sort order'),
+  order: z
+    .union([z.enum(['asc', 'desc']), z.string().transform((s) => (String(s).toLowerCase() === 'asc' ? 'asc' : 'desc'))])
+    .default('desc')
+    .describe('Sort order'),
 });
 
 export type ListVerificationProgramsArgs = z.infer<typeof ListVerificationProgramsArgsSchema>;
@@ -53,12 +56,9 @@ export async function listVerificationPrograms(
     ],
   };
 
-  const response = await apiRequest<{ list?: ListResult }>(
-    'POST',
-    '/management/program/query',
-    body,
-    { 'x-verifier-id': verifierId }
-  );
+  const response = await apiRequest<{ list?: ListResult }>('POST', '/management/program/query', body, {
+    'x-verifier-id': verifierId,
+  });
 
   const list = response.data?.list;
   const records = list?.records ?? [];

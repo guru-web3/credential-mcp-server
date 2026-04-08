@@ -9,10 +9,16 @@ import { credentialDocs } from '../tools/credential-docs.js';
 export const PROMPT_DEFINITIONS = [
   {
     name: 'setup_issuance',
-    description: 'Full flow: clone issuance template, generate .env.local (from template ID), mock from schema dataPoints, dev, tunnel, configure JWKS, test at localhost:3000. Pass credentialTemplateId for env; optional branch.',
+    description:
+      'Full flow: clone issuance template, generate .env.local (from template ID), mock from schema dataPoints, dev, tunnel, configure JWKS, test at localhost:3000. Pass credentialTemplateId for env; optional branch.',
     arguments: [
       { name: 'branch', description: 'Optional branch (e.g. mcp-template, sample/passport-age)', required: false },
-      { name: 'credentialTemplateId', description: 'Credential template/program ID for credential_issuance_app_config (env + schema dataPoints for mocking)', required: false },
+      {
+        name: 'credentialTemplateId',
+        description:
+          'Credential template/program ID for credential_issuance_app_config (env + schema dataPoints for mocking)',
+        required: false,
+      },
     ],
   },
   {
@@ -25,8 +31,15 @@ export const PROMPT_DEFINITIONS = [
   },
   {
     name: 'create_schema_from_description',
-    description: 'Guidance to create a credential schema from a natural language description (use credential_create_schema with derived schemaName, schemaType, dataPoints).',
-    arguments: [{ name: 'description', description: 'What the credential should represent (e.g. trading volume tier)', required: true }],
+    description:
+      'Guidance to create a credential schema from a natural language description (use credential_create_schema with derived schemaName, schemaType, dataPoints).',
+    arguments: [
+      {
+        name: 'description',
+        description: 'What the credential should represent (e.g. trading volume tier)',
+        required: true,
+      },
+    ],
   },
   {
     name: 'issue_and_verify_quickstart',
@@ -35,7 +48,11 @@ export const PROMPT_DEFINITIONS = [
   },
 ] as const;
 
-export function listPrompts(): { name: string; description?: string; arguments?: { name: string; description?: string; required?: boolean }[] }[] {
+export function listPrompts(): {
+  name: string;
+  description?: string;
+  arguments?: { name: string; description?: string; required?: boolean }[];
+}[] {
   return PROMPT_DEFINITIONS.map(({ name, description, arguments: args }) => ({
     name,
     description,
@@ -46,7 +63,10 @@ export function listPrompts(): { name: string; description?: string; arguments?:
 export async function getPrompt(
   name: string,
   args: Record<string, string> = {}
-): Promise<{ description?: string; messages: { role: 'user' | 'assistant'; content: { type: 'text'; text: string } }[] }> {
+): Promise<{
+  description?: string;
+  messages: { role: 'user' | 'assistant'; content: { type: 'text'; text: string } }[];
+}> {
   switch (name) {
     case 'setup_issuance': {
       const branch = args.branch ?? undefined;
@@ -110,7 +130,10 @@ export async function getPrompt(
         ``,
         `Derive attribute names and types from the description. Ask the user for confirmation before calling the tool if the description is ambiguous.`,
       ].join('\n');
-      return { description: 'Guidance to create schema from description', messages: [{ role: 'user', content: { type: 'text', text } }] };
+      return {
+        description: 'Guidance to create schema from description',
+        messages: [{ role: 'user', content: { type: 'text', text } }],
+      };
     }
     case 'issue_and_verify_quickstart': {
       const flow = (args.flow ?? 'both').toLowerCase();

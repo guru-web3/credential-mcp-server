@@ -12,17 +12,17 @@ export interface SessionState {
   verifierId?: string;
   verifierDid?: string;
   walletAddress?: string;
-  
+
   // Workflow state
   schemaId?: string;
   schemaName?: string;
   schemaType?: string;
   schemaContext?: string;
-  schemaDstorageId?: string;  // Added for OSS storage tracking
+  schemaDstorageId?: string; // Added for OSS storage tracking
   credentialTemplateId?: string;
   programIds?: string[];
   verifierIds?: string[];
-  
+
   // Environment
   environment: 'development' | 'staging' | 'production';
   apiUrl: string;

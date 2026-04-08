@@ -20,9 +20,7 @@ export const ISSUER_STAKING_CONTROLLER_ABI = [
   {
     type: 'function',
     name: 'claimUnstake',
-    inputs: [
-      { name: 'timestamps', type: 'uint256[]', internalType: 'uint256[]' },
-    ],
+    inputs: [{ name: 'timestamps', type: 'uint256[]', internalType: 'uint256[]' }],
     outputs: [],
     stateMutability: 'payable',
   },

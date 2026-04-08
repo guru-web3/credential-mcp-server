@@ -1,9 +1,4 @@
-export {
-  getChainWalletClient,
-  getChainPublicClient,
-  hasChainWallet,
-  clearChainWalletCache,
-} from './wallet.js';
+export { getChainWalletClient, getChainPublicClient, hasChainWallet, clearChainWalletCache } from './wallet.js';
 export {
   getPaymentsControllerContract,
   getPaymentsControllerReadContract,

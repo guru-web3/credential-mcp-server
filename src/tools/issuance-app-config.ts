@@ -10,7 +10,10 @@ import { listCredentialTemplates, type CredentialTemplateRecord } from './list-c
 import { apiRequest } from '../utils/api.js';
 
 export const IssuanceAppConfigArgsSchema = z.object({
-  credentialTemplateId: z.string().optional().describe('Issuance program ID (credentialId). If omitted, uses first template from list or session.'),
+  credentialTemplateId: z
+    .string()
+    .optional()
+    .describe('Issuance program ID (credentialId). If omitted, uses first template from list or session.'),
 });
 
 export type IssuanceAppConfigArgs = z.infer<typeof IssuanceAppConfigArgsSchema>;
@@ -125,7 +128,7 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
   const partnerId = session.get('partnerId');
   let issuerDid = session.get('issuerDid');
   const issuerId = session.get('issuerId');
-  
+
   if (!partnerId) {
     throw new Error('Session missing partnerId. Re-connect to the MCP server to authenticate.');
   }
@@ -141,7 +144,9 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
   }
 
   if (!issuerDid) {
-    throw new Error('Session missing issuerDid. Re-connect to the MCP server to authenticate, or check that the API returns issuerDid.');
+    throw new Error(
+      'Session missing issuerDid. Re-connect to the MCP server to authenticate, or check that the API returns issuerDid.'
+    );
   }
 
   const requestedId = args?.credentialTemplateId ?? session.get('credentialTemplateId');
@@ -161,9 +166,16 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
     });
     const template = findTemplateById(templates, requestedId);
     if (!template) {
-      throw new Error(`Credential template not found: ${String(requestedId)}. Check the ID or list templates with credential_list_templates.`);
+      throw new Error(
+        `Credential template not found: ${String(requestedId)}. Check the ID or list templates with credential_list_templates.`
+      );
     }
-    credentialId = template.credentialId != null ? String(template.credentialId) : template.id != null ? String(template.id) : String(requestedId);
+    credentialId =
+      template.credentialId != null
+        ? String(template.credentialId)
+        : template.id != null
+          ? String(template.id)
+          : String(requestedId);
     credentialName = template.credentialName ?? template.schemeTitle ?? 'Issuance credential';
     const schemeId = template.schemeId;
     dataPoints = schemeId ? await fetchSchemaDataPoints(schemeId) : [];
@@ -179,7 +191,9 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
     });
     const first = templates?.[0];
     if (!first) {
-      throw new Error('No credential template ID. Create a program with credential_create_program or pass credentialTemplateId.');
+      throw new Error(
+        'No credential template ID. Create a program with credential_create_program or pass credentialTemplateId.'
+      );
     }
     credentialId = first.credentialId != null ? String(first.credentialId) : first.id != null ? String(first.id) : '';
     credentialName = first.credentialName ?? first.schemeTitle ?? 'Issuance credential';
@@ -190,9 +204,7 @@ export async function getIssuanceAppConfig(args: IssuanceAppConfigArgs) {
     headline = `Store your ${credentialName} securely on Moca Network`;
   }
 
-  const credentialsConfig = [
-    { did: issuerDid, programId: credentialId, name: credentialName, dataPoints },
-  ];
+  const credentialsConfig = [{ did: issuerDid, programId: credentialId, name: credentialName, dataPoints }];
   const envLines = [
     `# Issuance app env — paste into .env.local. JWKS_KID and REOWN_PROJECT_ID are pre-filled below; do not leave them empty.`,
     `# Strictly replace only: PARTNER_PRIVATE_KEY, NEXT_PUBLIC_PARTNER_PUBLIC_KEY, NEXT_PUBLIC_REOWN_PROJECT_ID (if overriding).`,

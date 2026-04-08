@@ -20,7 +20,8 @@ const pricingModelEnum = z.enum(['each_attempt', 'pay_on_success']).optional().d
 
 function normalizePricingModel(s: string): 'each_attempt' | 'pay_on_success' {
   const lower = String(s).toLowerCase();
-  if (lower.includes('each') || lower.includes('attempt') || lower === 'all' || lower.includes('every')) return 'each_attempt';
+  if (lower.includes('each') || lower.includes('attempt') || lower === 'all' || lower.includes('every'))
+    return 'each_attempt';
   if (lower.includes('issuance')) return 'pay_on_success'; // API has no pay_on_issuance; map to pay_on_success
   return 'pay_on_success';
 }
@@ -28,16 +29,31 @@ function normalizePricingModel(s: string): 'each_attempt' | 'pay_on_success' {
 export const SetupPricingArgsSchema = z.object({
   schemaId: z.string().optional().describe('Schema ID (uses last created schema if not provided)'),
   pricingModel: z
-    .union([
-      pricingModelEnum,
-      z.string().transform((s) => normalizePricingModel(s)),
-    ])
+    .union([pricingModelEnum, z.string().transform((s) => normalizePricingModel(s))])
     .optional()
     .default('pay_on_success')
-    .describe('Pricing model: each_attempt = charge for every verification attempt (all verifications); pay_on_success = charge only for successful verifications'),
-  complianceAccessKeyEnabled: z.coerce.boolean().optional().default(false).describe('Enable Compliance Access Key (CAK) requirement'),
-  paymentFeeSchemaId: z.string().optional().describe('Payment fee schema ID (default is USD8 standard: 0x64676f3921f98b72cf26dc0ac617fcade0189ae5244fa1cd614c18fb89e1be87)'),
-  priceUsd: z.coerce.number().min(0).optional().default(0).describe('USD per verification (optional, default 0). Pass the numeric value when user says a price in USD (e.g. 0.1 for $0.10, 1 for $1).'),
+    .describe(
+      'Pricing model: each_attempt = charge for every verification attempt (all verifications); pay_on_success = charge only for successful verifications'
+    ),
+  complianceAccessKeyEnabled: z.coerce
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Enable Compliance Access Key (CAK) requirement'),
+  paymentFeeSchemaId: z
+    .string()
+    .optional()
+    .describe(
+      'Payment fee schema ID (default is USD8 standard: 0x64676f3921f98b72cf26dc0ac617fcade0189ae5244fa1cd614c18fb89e1be87)'
+    ),
+  priceUsd: z.coerce
+    .number()
+    .min(0)
+    .optional()
+    .default(0)
+    .describe(
+      'USD per verification (optional, default 0). Pass the numeric value when user says a price in USD (e.g. 0.1 for $0.10, 1 for $1).'
+    ),
 });
 
 /**
@@ -57,17 +73,16 @@ function generatePaymentHeaders(body: any, dashboardToken: string, issuerId: str
 
   // Step 3: AES-ECB encryption (dashboard: encryptWithEbc(secondStepStr))
   const key = CryptoJS.enc.Utf8.parse('WpVog9P8NveQLEJYE2cnjg==');
-  const encrypted = CryptoJS.AES.encrypt(
-    CryptoJS.enc.Utf8.parse(combined),
-    key,
-    { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 }
-  );
+  const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(combined), key, {
+    mode: CryptoJS.mode.ECB,
+    padding: CryptoJS.pad.Pkcs7,
+  });
 
   // Step 4: SHA256 of ciphertext WordArray (dashboard: hasher2.update(thirdStepResults.ciphertext))
   const signature = CryptoJS.SHA256(encrypted.ciphertext).toString();
 
   return {
-    'accept': 'application/json, text/plain, */*',
+    accept: 'application/json, text/plain, */*',
     'Content-Type': 'application/json',
     'x-signature': signature,
     'x-timestamp': timestamp,
@@ -84,7 +99,7 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
   if (process.env.NODE_ENV !== 'production') {
     console.log('[DEBUG] setupPricing received priceUsd:', priceUsd, typeof priceUsd);
   }
-  
+
   const schemaId = providedSchemaId || session.get('schemaId');
   if (!schemaId) {
     throw new Error('No schema ID provided. Create a schema first or provide schemaId parameter.');
@@ -122,9 +137,7 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
   let setPriceUrl: string | undefined;
   let txHash: string | undefined;
   let newPaymentFeeSchemaId: string | undefined;
-  const nextSteps: string[] = [
-    'Create verification programs with credential_create_verification_programs',
-  ];
+  const nextSteps: string[] = ['Create verification programs with credential_create_verification_programs'];
 
   // Match dashboard flow: when setting a positive price with chain wallet, do on-chain first then single POST (new schema) or update then sync (existing).
   const doChainFirst = hasPositivePrice && hasChainWallet() && !paymentFeeSchemaId;
@@ -134,12 +147,12 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
   if (doChainFirst || doChainUpdate) {
     const walletClient = getChainWalletClient();
     const chainAddress = walletClient?.account?.address?.toLowerCase();
-    const sessionWallet = (session.get('walletAddress') as string || '').toLowerCase();
+    const sessionWallet = ((session.get('walletAddress') as string) || '').toLowerCase();
     if (chainAddress && sessionWallet && chainAddress !== sessionWallet) {
       throw new Error(
         'Chain wallet (CREDENTIAL_MCP_PRIVATE_KEY) must be the same as the authenticated issuer wallet. ' +
-        `Session issuer: ${sessionWallet}, MCP chain wallet: ${chainAddress}. ` +
-        'Use the issuer admin private key in CREDENTIAL_MCP_PRIVATE_KEY so on-chain txs succeed.'
+          `Session issuer: ${sessionWallet}, MCP chain wallet: ${chainAddress}. ` +
+          'Use the issuer admin private key in CREDENTIAL_MCP_PRIVATE_KEY so on-chain txs succeed.'
       );
     }
   }
@@ -162,14 +175,14 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
               if (!assetManager || String(assetManager).toLowerCase() === zero) {
                 throw new Error(
                   'Your wallet is not registered as an issuer on the Payments Controller. ' +
-                  'Set the verification price once in the Credential Dashboard (Pricing → Define schema price → confirm with wallet) so the issuer is registered on-chain; then MCP pricing will work. ' +
-                  'Or ask the deployment admin to register your address via createIssuer on the Payments Controller.'
+                    'Set the verification price once in the Credential Dashboard (Pricing → Define schema price → confirm with wallet) so the issuer is registered on-chain; then MCP pricing will work. ' +
+                    'Or ask the deployment admin to register your address via createIssuer on the Payments Controller.'
                 );
               }
             } catch {
               throw new Error(
                 'Your wallet is not registered as an issuer on the Payments Controller. ' +
-                'Set the verification price once in the Credential Dashboard (Pricing → Define schema price → confirm with wallet), or ask the admin to register your address via createIssuer.'
+                  'Set the verification price once in the Credential Dashboard (Pricing → Define schema price → confirm with wallet), or ask the admin to register your address via createIssuer.'
               );
             }
           }
@@ -182,8 +195,8 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
           if (receipt.status !== 'success') {
             throw new Error(
               `Transaction reverted on-chain (tx: ${receipt.transactionHash}). ` +
-              'Ensure CREDENTIAL_MCP_PRIVATE_KEY is the **issuer admin wallet** for this partner (same as in Dashboard), ' +
-              'and that the wallet has devnet MOCA for gas. Check the tx on the block explorer for revert reason.'
+                'Ensure CREDENTIAL_MCP_PRIVATE_KEY is the **issuer admin wallet** for this partner (same as in Dashboard), ' +
+                'and that the wallet has devnet MOCA for gas. Check the tx on the block explorer for revert reason.'
             );
           }
           txHash = receipt.transactionHash;
@@ -196,9 +209,7 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
               });
               if (decoded.eventName === 'SchemaCreated' && decoded.args?.schemaId) {
                 newPaymentFeeSchemaId =
-                  typeof decoded.args.schemaId === 'string'
-                    ? decoded.args.schemaId
-                    : String(decoded.args.schemaId);
+                  typeof decoded.args.schemaId === 'string' ? decoded.args.schemaId : String(decoded.args.schemaId);
                 break;
               }
             } catch {
@@ -216,11 +227,7 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
             paymentFeeSchemaId: newPaymentFeeSchemaId,
           };
           const headers = generatePaymentHeaders(bodyWithId as any, dashboardToken, issuerId);
-          const response = await axios.post(
-            `${paymentApiUrl}/v1/payment/schema/fee`,
-            bodyWithId,
-            { headers }
-          );
+          const response = await axios.post(`${paymentApiUrl}/v1/payment/schema/fee`, bodyWithId, { headers });
           if (response.status !== 200 && response.status !== 201) {
             throw new Error(`API returned error: ${response.data?.msg || response.statusText}`);
           }
@@ -237,14 +244,16 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
         const schemaIdBytes32 = paymentFeeSchemaId.startsWith('0x')
           ? (paymentFeeSchemaId as `0x${string}`)
           : (`0x${paymentFeeSchemaId.replace(/^0x/i, '')}` as `0x${string}`);
-        const hash = await contract.write.updateSchemaFee([schemaIdBytes32, priceInWei], { gas: MOCA_DEFAULT_GAS_LIMIT });
+        const hash = await contract.write.updateSchemaFee([schemaIdBytes32, priceInWei], {
+          gas: MOCA_DEFAULT_GAS_LIMIT,
+        });
         const publicClient = getChainPublicClient();
         if (publicClient) {
           const receipt = await publicClient.waitForTransactionReceipt({ hash });
           if (receipt.status !== 'success') {
             throw new Error(
               `Transaction reverted on-chain (tx: ${receipt.transactionHash}). ` +
-              'Ensure the payment fee schema belongs to the issuer admin wallet and the wallet has devnet MOCA for gas.'
+                'Ensure the payment fee schema belongs to the issuer admin wallet and the wallet has devnet MOCA for gas.'
             );
           }
           txHash = receipt.transactionHash;
@@ -262,11 +271,7 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
     } else {
       // No chain wallet or price is 0: register with API only (placeholder or metadata)
       const headers = generatePaymentHeaders(pricingData as any, dashboardToken, issuerId);
-      const response = await axios.post(
-        `${paymentApiUrl}/v1/payment/schema/fee`,
-        pricingData,
-        { headers }
-      );
+      const response = await axios.post(`${paymentApiUrl}/v1/payment/schema/fee`, pricingData, { headers });
       if (response.status !== 200 && response.status !== 201) {
         throw new Error(`API returned error: ${response.data?.msg || response.statusText}`);
       }
@@ -275,17 +280,16 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
 
     if (hasPositivePrice && !txHash) {
       const signerBase = process.env.CREDENTIAL_SIGNER_URL?.replace(/\/$/, '') || '';
-      setPriceUrl =
-        signerBase
-          ? `${signerBase}/set-price?price=${priceNum}&schemaId=${encodeURIComponent(schemaId)}`
-          : undefined;
+      setPriceUrl = signerBase
+        ? `${signerBase}/set-price?price=${priceNum}&schemaId=${encodeURIComponent(schemaId)}`
+        : undefined;
       if (setPriceUrl) {
         nextSteps.unshift(
-          `Set the verification price on-chain: open ${setPriceUrl} in your browser, connect your wallet on MOCA, then confirm the transaction. Alternatively use Credential Dashboard → Pricing → Define schema price.`,
+          `Set the verification price on-chain: open ${setPriceUrl} in your browser, connect your wallet on MOCA, then confirm the transaction. Alternatively use Credential Dashboard → Pricing → Define schema price.`
         );
       } else {
         nextSteps.unshift(
-          `Set the verification price on-chain: Credential Dashboard → Pricing → Define schema price → select schema ${schemaId} → enter ${priceNum} USD8 → Confirm (sign with wallet).`,
+          `Set the verification price on-chain: Credential Dashboard → Pricing → Define schema price → select schema ${schemaId} → enter ${priceNum} USD8 → Confirm (sign with wallet).`
         );
       }
     }
@@ -320,17 +324,15 @@ export async function setupPricing(args: z.infer<typeof SetupPricingArgsSchema>)
         hasPositivePrice && signerBase
           ? `${signerBase}/set-price?price=${priceNum}&schemaId=${encodeURIComponent(schemaId)}`
           : undefined;
-      const nextSteps: string[] = [
-        'Create verification programs with credential_create_verification_programs',
-      ];
+      const nextSteps: string[] = ['Create verification programs with credential_create_verification_programs'];
       if (hasPositivePrice) {
         if (setPriceUrl) {
           nextSteps.unshift(
-            `Set the verification price on-chain: open ${setPriceUrl} in your browser, connect your wallet on MOCA, then confirm the transaction.`,
+            `Set the verification price on-chain: open ${setPriceUrl} in your browser, connect your wallet on MOCA, then confirm the transaction.`
           );
         } else {
           nextSteps.unshift(
-            `Set the verification price on-chain: Credential Dashboard → Pricing → Define schema price → select schema ${schemaId} → enter ${priceNum} USD8 → Confirm (sign with wallet).`,
+            `Set the verification price on-chain: Credential Dashboard → Pricing → Define schema price → select schema ${schemaId} → enter ${priceNum} USD8 → Confirm (sign with wallet).`
           );
         }
       }

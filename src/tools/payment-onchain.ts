@@ -5,7 +5,12 @@
 
 import { z } from 'zod';
 import { parseUnits } from 'viem';
-import { getPaymentsControllerContract, hasChainWallet, getChainPublicClient, MOCA_DEFAULT_GAS_LIMIT } from '../chain/index.js';
+import {
+  getPaymentsControllerContract,
+  hasChainWallet,
+  getChainPublicClient,
+  MOCA_DEFAULT_GAS_LIMIT,
+} from '../chain/index.js';
 
 const USD8_DECIMALS = 8;
 const WALLET_REQUIRED_MSG =
@@ -25,7 +30,9 @@ export const PaymentDepositArgsSchema = z.object({
 
 export async function paymentDeposit(args: z.infer<typeof PaymentDepositArgsSchema>) {
   const contract = requireWallet();
-  const verifier = args.verifierAddress.startsWith('0x') ? args.verifierAddress as `0x${string}` : `0x${args.verifierAddress}`;
+  const verifier = args.verifierAddress.startsWith('0x')
+    ? (args.verifierAddress as `0x${string}`)
+    : `0x${args.verifierAddress}`;
   const amountInWei = parseUnits(args.amountUsd.toString(), USD8_DECIMALS);
   const hash = await contract.write.deposit([verifier, amountInWei], { gas: MOCA_DEFAULT_GAS_LIMIT });
   const publicClient = getChainPublicClient();
@@ -40,7 +47,9 @@ export const PaymentWithdrawArgsSchema = z.object({
 
 export async function paymentWithdraw(args: z.infer<typeof PaymentWithdrawArgsSchema>) {
   const contract = requireWallet();
-  const verifier = args.verifierAddress.startsWith('0x') ? args.verifierAddress as `0x${string}` : `0x${args.verifierAddress}`;
+  const verifier = args.verifierAddress.startsWith('0x')
+    ? (args.verifierAddress as `0x${string}`)
+    : `0x${args.verifierAddress}`;
   const amountInWei = parseUnits(args.amountUsd.toString(), USD8_DECIMALS);
   const hash = await contract.write.withdraw([verifier, amountInWei], { gas: MOCA_DEFAULT_GAS_LIMIT });
   const publicClient = getChainPublicClient();
@@ -54,7 +63,9 @@ export const PaymentClaimFeesArgsSchema = z.object({
 
 export async function paymentClaimFees(args: z.infer<typeof PaymentClaimFeesArgsSchema>) {
   const contract = requireWallet();
-  const issuer = args.issuerAddress.startsWith('0x') ? args.issuerAddress as `0x${string}` : `0x${args.issuerAddress}`;
+  const issuer = args.issuerAddress.startsWith('0x')
+    ? (args.issuerAddress as `0x${string}`)
+    : `0x${args.issuerAddress}`;
   const hash = await contract.write.claimFees([issuer], { gas: MOCA_DEFAULT_GAS_LIMIT });
   const publicClient = getChainPublicClient();
   const txHash = publicClient ? (await publicClient.waitForTransactionReceipt({ hash })).transactionHash : hash;

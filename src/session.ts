@@ -34,15 +34,13 @@ class Session {
   }
 
   isAuthenticated(): boolean {
-    return (
-      !!this.state.dashboardToken &&
-      (!this.state.tokenExpiry || this.state.tokenExpiry > new Date())
-    );
+    return !!this.state.dashboardToken && (!this.state.tokenExpiry || this.state.tokenExpiry > new Date());
   }
 
   setEnvironment(env: 'development' | 'staging' | 'production'): void {
     this.state.environment = env;
-    const configEnv: ConfigEnvironment = env === 'production' ? 'production' : env === 'development' ? 'sandbox' : 'staging';
+    const configEnv: ConfigEnvironment =
+      env === 'production' ? 'production' : env === 'development' ? 'sandbox' : 'staging';
     this.state.apiUrl = getCredentialApiUrl(configEnv);
   }
 

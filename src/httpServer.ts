@@ -24,16 +24,18 @@ const signerUrl = process.env.CREDENTIAL_SIGNER_URL || 'https://credential-chall
 const oauthProvider = createCredentialOAuthProvider({ baseUrl });
 
 /** Per-session server + transport so reloads (new initialize without session id) get a fresh session instead of "Server already initialized". */
-const sessions = new Map<
-  string,
-  { server: Server; transport: StreamableHTTPServerTransport }
->();
+const sessions = new Map<string, { server: Server; transport: StreamableHTTPServerTransport }>();
 
 function isInitializeRequest(body: unknown): boolean {
   if (body && typeof body === 'object' && 'method' in body && (body as { method: string }).method === 'initialize') {
     return true;
   }
-  if (Array.isArray(body) && body.some((m: unknown) => m && typeof m === 'object' && 'method' in m && (m as { method: string }).method === 'initialize')) {
+  if (
+    Array.isArray(body) &&
+    body.some(
+      (m: unknown) => m && typeof m === 'object' && 'method' in m && (m as { method: string }).method === 'initialize'
+    )
+  ) {
     return true;
   }
   return false;
@@ -65,14 +67,16 @@ app.get('/', (_req, res) => {
 // When CREDENTIAL_MCP_PRIVATE_KEY or CREDENTIAL_MCP_SEED_PHRASE is set, skip OAuth discovery
 // so Cursor does not show "Needs authentication" / "Connect". Requests to /mcp use key-based auth instead.
 if (!isKeyBasedAuthAvailable()) {
-  app.use(mcpAuthRouter({
-    provider: oauthProvider,
-    issuerUrl,
-    baseUrl: issuerUrl,
-    resourceServerUrl: mcpServerUrl,
-    resourceName: 'Animoca Credential MCP',
-    scopesSupported: ['mcp:connect'],
-  }));
+  app.use(
+    mcpAuthRouter({
+      provider: oauthProvider,
+      issuerUrl,
+      baseUrl: issuerUrl,
+      resourceServerUrl: mcpServerUrl,
+      resourceName: 'Animoca Credential MCP',
+      scopesSupported: ['mcp:connect'],
+    })
+  );
 }
 
 app.get('/oauth/login', (req, res) => {
@@ -100,7 +104,8 @@ app.get('/oauth/login', (req, res) => {
 app.post('/oauth/callback', handleOAuthCallback);
 
 app.all('/mcp', bearerOrKeyAuth(oauthProvider), async (req, res) => {
-  const auth = (req as express.Request & { auth?: import('@modelcontextprotocol/sdk/server/auth/types.js').AuthInfo }).auth;
+  const auth = (req as express.Request & { auth?: import('@modelcontextprotocol/sdk/server/auth/types.js').AuthInfo })
+    .auth;
   if (!auth) {
     res.status(401).end();
     return;
@@ -189,5 +194,7 @@ app.listen(PORT, () => {
   console.error(`Animoca Credential MCP HTTP server listening on http://localhost:${PORT}`);
   console.error(`MCP endpoint: ${mcpServerUrl.href}`);
   console.error(`OAuth issuer: ${issuerUrl.href}`);
-  console.error('If clients get 500 with "server_error": token may be missing/expired — re-add the MCP server in Cursor and complete OAuth login.');
+  console.error(
+    'If clients get 500 with "server_error": token may be missing/expired — re-add the MCP server in Cursor and complete OAuth login.'
+  );
 });

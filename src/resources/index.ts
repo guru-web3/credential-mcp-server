@@ -7,11 +7,36 @@ import { credentialDocs } from '../tools/credential-docs.js';
 import { getTemplateInfo } from '../tools/template-info.js';
 
 const RESOURCE_LIST = [
-  { uri: 'credential://docs/issuance', name: 'Issuance docs', description: 'Step-by-step issuance flow (Quickstart 2)', mimeType: 'text/markdown' },
-  { uri: 'credential://docs/verification', name: 'Verification docs', description: 'Step-by-step verification flow (Quickstart 3)', mimeType: 'text/markdown' },
-  { uri: 'credential://docs/both', name: 'Issuance + verification docs', description: 'Both issuance and verification flows', mimeType: 'text/markdown' },
-  { uri: 'credential://template-info/issuance', name: 'Issuance template info', description: 'Repo URL, branch, clone command for issuance app', mimeType: 'application/json' },
-  { uri: 'credential://template-info/verifier', name: 'Verifier template info', description: 'Repo URL, branch, clone command for verifier app', mimeType: 'application/json' },
+  {
+    uri: 'credential://docs/issuance',
+    name: 'Issuance docs',
+    description: 'Step-by-step issuance flow (Quickstart 2)',
+    mimeType: 'text/markdown',
+  },
+  {
+    uri: 'credential://docs/verification',
+    name: 'Verification docs',
+    description: 'Step-by-step verification flow (Quickstart 3)',
+    mimeType: 'text/markdown',
+  },
+  {
+    uri: 'credential://docs/both',
+    name: 'Issuance + verification docs',
+    description: 'Both issuance and verification flows',
+    mimeType: 'text/markdown',
+  },
+  {
+    uri: 'credential://template-info/issuance',
+    name: 'Issuance template info',
+    description: 'Repo URL, branch, clone command for issuance app',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'credential://template-info/verifier',
+    name: 'Verifier template info',
+    description: 'Repo URL, branch, clone command for verifier app',
+    mimeType: 'application/json',
+  },
 ] as const;
 
 export function listResources(): { uri: string; name: string; description?: string; mimeType?: string }[] {

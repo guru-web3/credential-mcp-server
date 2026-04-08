@@ -18,11 +18,10 @@ function generateApiHeaders(body: unknown, dashboardToken?: string): Record<stri
   const firstHash = CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(bodyStr)).toString();
   const combined = `${firstHash}_${timestamp}`;
   const key = CryptoJS.enc.Utf8.parse(getCredentialApiSignatureKey());
-  const encrypted = CryptoJS.AES.encrypt(
-    CryptoJS.enc.Utf8.parse(combined),
-    key,
-    { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 }
-  );
+  const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(combined), key, {
+    mode: CryptoJS.mode.ECB,
+    padding: CryptoJS.pad.Pkcs7,
+  });
   const signature = CryptoJS.SHA256(encrypted.ciphertext).toString();
 
   const headers: Record<string, string> = {
@@ -112,7 +111,9 @@ export async function apiRequest<T>(
     if (resp?.code !== 80000000 && resp?.code !== '80000000') {
       const detail = resp?.data != null ? ` | detail: ${JSON.stringify(resp.data)}` : '';
       if (DEBUG) console.error('[DEBUG] API error full response:', JSON.stringify(resp, null, 2));
-      const err = new Error(`API returned error: ${resp?.msg ?? 'Unknown error'}${detail}`) as Error & { apiResponse?: unknown };
+      const err = new Error(`API returned error: ${resp?.msg ?? 'Unknown error'}${detail}`) as Error & {
+        apiResponse?: unknown;
+      };
       err.apiResponse = resp;
       throw err;
     }

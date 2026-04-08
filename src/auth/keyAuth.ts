@@ -50,9 +50,7 @@ function getLoginSigner(): LoginSigner | null {
  * Throws on login API error.
  * Environment defaults to CREDENTIAL_MCP_ENVIRONMENT (or config_env) or 'staging'.
  */
-export async function tryKeyBasedLogin(
-  environment: ConfigEnvironment = getEnvironment()
-): Promise<boolean> {
+export async function tryKeyBasedLogin(environment: ConfigEnvironment = getEnvironment()): Promise<boolean> {
   const wallet = getLoginSigner();
   if (!wallet) return false;
 
@@ -76,7 +74,9 @@ Timestamp: ${isoTimestamp}`;
     timeout: LOGIN_REQUEST_TIMEOUT_MS,
   });
 
-  const resp = loginResponse.data as { code?: number; data?: Record<string, unknown>; msg?: string; message?: string } | undefined;
+  const resp = loginResponse.data as
+    | { code?: number; data?: Record<string, unknown>; msg?: string; message?: string }
+    | undefined;
   if (!resp || resp.code !== 80000000) {
     const code = resp?.code ?? 'no code';
     const msg = resp?.msg ?? resp?.message ?? '(empty)';

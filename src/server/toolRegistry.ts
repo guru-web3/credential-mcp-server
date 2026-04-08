@@ -34,6 +34,7 @@ import {
   UnstakeMocaArgsSchema,
   ClaimUnstakeMocaArgsSchema,
 } from '../tools/staking-onchain.js';
+import { x402PayAndVerify, X402PayAndVerifyArgsSchema } from '../tools/x402-pay-and-verify.js';
 
 /** MCP tool list item (name, description, inputSchema). */
 export type ToolListEntry = {
@@ -57,14 +58,21 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
       type: 'object' as const,
       properties: {
         schemaName: { type: 'string' as const, description: 'Schema name (e.g., trading-volume-credential)' },
-        schemaType: { type: 'string' as const, description: 'Schema type identifier (e.g., tradingVolumeCredential). Must be unique.' },
+        schemaType: {
+          type: 'string' as const,
+          description: 'Schema type identifier (e.g., tradingVolumeCredential). Must be unique.',
+        },
         dataPoints: {
           type: 'array' as const,
           items: {
             type: 'object' as const,
             properties: {
               name: { type: 'string' as const, description: 'Attribute name' },
-              type: { type: 'string' as const, enum: ['string', 'integer', 'number', 'boolean'], description: 'Data type' },
+              type: {
+                type: 'string' as const,
+                enum: ['string', 'integer', 'number', 'boolean'],
+                description: 'Data type',
+              },
               description: { type: 'string' as const, description: 'Attribute description (optional)' },
             },
             required: ['name', 'type'],
@@ -86,14 +94,36 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        schemaId: { type: 'string' as const, description: 'Schema ID. When provided, schemeType, schemeTitle and credentialName are fetched from the schema if omitted.' },
-        credentialName: { type: 'string' as const, description: 'Name of the credential. Defaults to schema title when schemaId is provided.' },
-        schemeType: { type: 'string' as const, description: 'Schema type identifier. Filled from schema when schemaId is provided.' },
-        schemeTitle: { type: 'string' as const, description: 'Schema title. Filled from schema when schemaId is provided.' },
+        schemaId: {
+          type: 'string' as const,
+          description:
+            'Schema ID. When provided, schemeType, schemeTitle and credentialName are fetched from the schema if omitted.',
+        },
+        credentialName: {
+          type: 'string' as const,
+          description: 'Name of the credential. Defaults to schema title when schemaId is provided.',
+        },
+        schemeType: {
+          type: 'string' as const,
+          description: 'Schema type identifier. Filled from schema when schemaId is provided.',
+        },
+        schemeTitle: {
+          type: 'string' as const,
+          description: 'Schema title. Filled from schema when schemaId is provided.',
+        },
         expirationDuration: { type: 'number' as const, description: 'Expiration duration in days (default: 365)' },
-        issueMax: { type: ['number', 'null'] as const, description: 'Maximum number of credentials to issue (null for unlimited)' },
-        accessibleStartAt: { type: 'string' as const, description: 'Start date for accessibility (ISO format or empty string)' },
-        accessibleEndAt: { type: 'string' as const, description: 'End date for accessibility (ISO format or empty string)' },
+        issueMax: {
+          type: ['number', 'null'] as const,
+          description: 'Maximum number of credentials to issue (null for unlimited)',
+        },
+        accessibleStartAt: {
+          type: 'string' as const,
+          description: 'Start date for accessibility (ISO format or empty string)',
+        },
+        accessibleEndAt: {
+          type: 'string' as const,
+          description: 'End date for accessibility (ISO format or empty string)',
+        },
         revokeFlag: { type: 'number' as const, description: 'Revoke flag (0 or 1)' },
         complianceAccessKeyEnabled: { type: 'number' as const, description: 'Compliance access key enabled (0 or 1)' },
       },
@@ -116,9 +146,19 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
           description:
             'Use "each_attempt" when user says "all verifications", "for all", "all", or 0 USD for all. Use "pay_on_success" only when user wants successful verifications only. Default is pay_on_success.',
         },
-        complianceAccessKeyEnabled: { type: 'boolean' as const, default: false, description: 'Enable Compliance Access Key (CAK) requirement' },
-        paymentFeeSchemaId: { type: 'string' as const, description: 'Optional payment fee schema ID (omit to use default USD8)' },
-        priceUsd: { type: 'number' as const, description: 'Optional USD per verification (default 0). Use for verification fee in USD.' },
+        complianceAccessKeyEnabled: {
+          type: 'boolean' as const,
+          default: false,
+          description: 'Enable Compliance Access Key (CAK) requirement',
+        },
+        paymentFeeSchemaId: {
+          type: 'string' as const,
+          description: 'Optional payment fee schema ID (omit to use default USD8)',
+        },
+        priceUsd: {
+          type: 'number' as const,
+          description: 'Optional USD per verification (default 0). Use for verification fee in USD.',
+        },
       },
     },
     schema: SetupPricingArgsSchema,
@@ -132,7 +172,10 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
       type: 'object' as const,
       properties: {
         schemaId: { type: 'string' as const, description: 'Schema ID (uses last created schema if not provided)' },
-        deploy: { type: 'boolean' as const, description: 'If true (default), deploy each program after create so it becomes active.' },
+        deploy: {
+          type: 'boolean' as const,
+          description: 'If true (default), deploy each program after create so it becomes active.',
+        },
         pricingModel: {
           type: 'string' as const,
           enum: ['each_attempt', 'pay_on_success'],
@@ -154,14 +197,21 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
           items: {
             type: 'object' as const,
             properties: {
-              programName: { type: 'string' as const, description: 'Unique program name (e.g., trading_volume_tier_gold)' },
+              programName: {
+                type: 'string' as const,
+                description: 'Unique program name (e.g., trading_volume_tier_gold)',
+              },
               conditions: {
                 type: 'array' as const,
                 items: {
                   type: 'object' as const,
                   properties: {
                     attribute: { type: 'string' as const, description: 'Schema attribute to verify' },
-                    operator: { type: 'string' as const, enum: ['>', '>=', '<', '<=', '=', '!='], description: 'Comparison operator' },
+                    operator: {
+                      type: 'string' as const,
+                      enum: ['>', '>=', '<', '<=', '=', '!='],
+                      description: 'Comparison operator',
+                    },
                     value: { description: 'Value to compare against' },
                   },
                   required: ['attribute', 'operator', 'value'],
@@ -181,7 +231,8 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
   },
   {
     name: 'credential_list_templates',
-    description: 'List credential templates (issuance programs) for the authenticated issuer. Returns template IDs and names for use as credentialId in SDK.',
+    description:
+      'List credential templates (issuance programs) for the authenticated issuer. Returns template IDs and names for use as credentialId in SDK.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -197,7 +248,8 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
   },
   {
     name: 'credential_list_programs',
-    description: 'List verification programs for the authenticated verifier. Returns program IDs and names for use as programId in verifyCredential.',
+    description:
+      'List verification programs for the authenticated verifier. Returns program IDs and names for use as programId in verifyCredential.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -218,7 +270,12 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        flow: { type: 'string' as const, enum: ['issuance', 'verification', 'both'], default: 'both', description: 'Which flow to document' },
+        flow: {
+          type: 'string' as const,
+          enum: ['issuance', 'verification', 'both'],
+          default: 'both',
+          description: 'Which flow to document',
+        },
       },
     },
     schema: CredentialDocsArgsSchema,
@@ -226,14 +283,20 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
   },
   {
     name: 'credential_list_schemas',
-    description: 'List credential schemas for the authenticated issuer. Use own_schemas for your schemas or other_schemas to search others.',
+    description:
+      'List credential schemas for the authenticated issuer. Use own_schemas for your schemas or other_schemas to search others.',
     inputSchema: {
       type: 'object' as const,
       properties: {
         page: { type: 'number' as const, description: 'Page number (1-based)', default: 1 },
         size: { type: 'number' as const, description: 'Page size', default: 20 },
         searchStr: { type: 'string' as const, description: 'Optional search string' },
-        filterType: { type: 'string' as const, enum: ['own_schemas', 'other_schemas'], description: 'own_schemas or other_schemas', default: 'own_schemas' },
+        filterType: {
+          type: 'string' as const,
+          enum: ['own_schemas', 'other_schemas'],
+          description: 'own_schemas or other_schemas',
+          default: 'own_schemas',
+        },
         sortField: { type: 'string' as const, description: 'Sort field', default: 'create_at' },
         order: { type: 'string' as const, enum: ['asc', 'desc'], description: 'Sort order', default: 'desc' },
       },
@@ -248,7 +311,11 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        appType: { type: 'string' as const, enum: ['issuance', 'verifier'], description: 'issuance or verifier template' },
+        appType: {
+          type: 'string' as const,
+          enum: ['issuance', 'verifier'],
+          description: 'issuance or verifier template',
+        },
         branch: { type: 'string' as const, description: 'Optional branch (e.g. mcp-template, sample/passport-age)' },
       },
       required: ['appType'] as const,
@@ -263,7 +330,10 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        credentialTemplateId: { type: 'string' as const, description: 'Optional issuance program ID; if omitted uses first template or session' },
+        credentialTemplateId: {
+          type: 'string' as const,
+          description: 'Optional issuance program ID; if omitted uses first template or session',
+        },
       },
     },
     schema: IssuanceAppConfigArgsSchema,
@@ -275,7 +345,10 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        programId: { type: 'string' as const, description: 'Optional verification program ID; if omitted uses first program or session' },
+        programId: {
+          type: 'string' as const,
+          description: 'Optional verification program ID; if omitted uses first program or session',
+        },
       },
     },
     schema: VerifierAppConfigArgsSchema,
@@ -303,9 +376,21 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        origin: { type: 'string' as const, description: 'Base URL from tunnel: run npx instatunnel 3000, copy the HTTPS URL from the console. Do not use localhost for JWKS. No trailing slash.' },
-        probeBeforeUpdate: { type: 'boolean' as const, description: 'If true, GET the JWKS URL before updating; if not reachable, return error so user can start server and retry. Default true.' },
-        replaceDomains: { type: 'boolean' as const, description: 'If true, set allowed domains to only the new hostname; if false, merge into existing (max 3). Default false.' },
+        origin: {
+          type: 'string' as const,
+          description:
+            'Base URL from tunnel: run npx instatunnel 3000, copy the HTTPS URL from the console. Do not use localhost for JWKS. No trailing slash.',
+        },
+        probeBeforeUpdate: {
+          type: 'boolean' as const,
+          description:
+            'If true, GET the JWKS URL before updating; if not reachable, return error so user can start server and retry. Default true.',
+        },
+        replaceDomains: {
+          type: 'boolean' as const,
+          description:
+            'If true, set allowed domains to only the new hostname; if false, merge into existing (max 3). Default false.',
+        },
       },
       required: ['origin'] as const,
     },
@@ -319,7 +404,10 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        paymentFeeSchemaId: { type: 'string' as const, description: 'Existing payment fee schema ID (bytes32 hex). Omit to create a new one.' },
+        paymentFeeSchemaId: {
+          type: 'string' as const,
+          description: 'Existing payment fee schema ID (bytes32 hex). Omit to create a new one.',
+        },
         priceUsd: { type: 'number' as const, description: 'Price in USD (e.g. 0.1 for $0.10)' },
       },
       required: ['priceUsd'] as const,
@@ -370,7 +458,8 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
   },
   {
     name: 'credential_stake_moca',
-    description: 'Stake native MOCA for issuer usage quota (tiers). Requires chain wallet env. Respects MAX_SINGLE_STAKE_AMOUNT.',
+    description:
+      'Stake native MOCA for issuer usage quota (tiers). Requires chain wallet env. Respects MAX_SINGLE_STAKE_AMOUNT.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -383,7 +472,8 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
   },
   {
     name: 'credential_unstake_moca',
-    description: 'Initiate unstake of MOCA. After UNSTAKE_DELAY, use credential_claim_unstake_moca with the claimable timestamp(s). Requires chain wallet env.',
+    description:
+      'Initiate unstake of MOCA. After UNSTAKE_DELAY, use credential_claim_unstake_moca with the claimable timestamp(s). Requires chain wallet env.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -396,7 +486,8 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
   },
   {
     name: 'credential_claim_unstake_moca',
-    description: 'Claim MOCA after unstake delay. Pass array of claimable timestamps from prior initiateUnstake. Requires chain wallet env.',
+    description:
+      'Claim MOCA after unstake delay. Pass array of claimable timestamps from prior initiateUnstake. Requires chain wallet env.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -410,6 +501,22 @@ const TOOL_ENTRIES: ToolRegistryEntry[] = [
     },
     schema: ClaimUnstakeMocaArgsSchema,
     handler: (args) => claimUnstakeMoca(ClaimUnstakeMocaArgsSchema.parse(args)),
+  },
+  {
+    name: 'x402_pay_and_verify',
+    description:
+      'Call any x402-protected API endpoint with automatic on-chain payment. Uses EIP-3009 transferWithAuthorization via @x402/fetch. Requires CREDENTIAL_MCP_PRIVATE_KEY for signing.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        url: { type: 'string' as const, description: 'Full URL of the x402-protected endpoint to call' },
+        method: { type: 'string' as const, enum: ['GET', 'POST'], description: 'HTTP method (default GET)' },
+        body: { type: 'object' as const, description: 'Optional JSON body for POST requests' },
+      },
+      required: ['url'] as const,
+    },
+    schema: X402PayAndVerifyArgsSchema,
+    handler: (args) => x402PayAndVerify(X402PayAndVerifyArgsSchema.parse(args)),
   },
 ];
 

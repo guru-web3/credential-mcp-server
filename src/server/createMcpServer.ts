@@ -47,11 +47,7 @@ export function createMcpServer(): { server: Server } {
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify(
-              { success: false, error: `Unknown tool: ${name}`, tool: name },
-              null,
-              2
-            ),
+            text: JSON.stringify({ success: false, error: `Unknown tool: ${name}`, tool: name }, null, 2),
           },
         ],
         isError: true,
@@ -75,11 +71,7 @@ export function createMcpServer(): { server: Server } {
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify(
-              { success: false, error: message, tool: name },
-              null,
-              2
-            ),
+            text: JSON.stringify({ success: false, error: message, tool: name }, null, 2),
           },
         ],
         isError: true,

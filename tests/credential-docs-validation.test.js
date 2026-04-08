@@ -26,10 +26,8 @@ describe('CredentialDocsArgsSchema', () => {
     assert.strictEqual(result.flow, 'both');
   });
 
-  it('rejects invalid flow enum', () => {
-    assert.throws(
-      () => CredentialDocsArgsSchema.parse({ flow: 'docs' }),
-      (err) => err.message.includes('enum') || err.message.includes('issuance')
-    );
+  it('normalizes invalid flow to default (both)', () => {
+    const result = CredentialDocsArgsSchema.parse({ flow: 'docs' });
+    assert.strictEqual(result.flow, 'both');
   });
 });

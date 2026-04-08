@@ -1,9 +1,6 @@
 import type { Response } from 'express';
 import * as jose from 'jose';
-import type {
-  OAuthServerProvider,
-  AuthorizationParams,
-} from '@modelcontextprotocol/sdk/server/auth/provider.js';
+import type { OAuthServerProvider, AuthorizationParams } from '@modelcontextprotocol/sdk/server/auth/provider.js';
 import type { OAuthRegisteredClientsStore } from '@modelcontextprotocol/sdk/server/auth/clients.js';
 import type { OAuthClientInformationFull, OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
@@ -36,7 +33,7 @@ const clientsStore: OAuthRegisteredClientsStore = {
     const dynamic = dynamicClients.get(clientId);
     if (dynamic) return dynamic;
     if (clientId === 'cursor') return cursorClient;
-    
+
     // Auto-register unknown clients (e.g., VS Code dynamic auth)
     // This allows VS Code's generated UUIDs to work seamlessly
     if (process.env.NODE_ENV !== 'production') {
@@ -55,15 +52,18 @@ const clientsStore: OAuthRegisteredClientsStore = {
       dynamicClients.set(clientId, vscodeClient);
       return vscodeClient;
     }
-    
+
     return undefined;
   },
 
   registerClient(
     client: Omit<OAuthClientInformationFull, 'client_id' | 'client_id_issued_at'>
   ): OAuthClientInformationFull {
-    const clientId = (client as OAuthClientInformationFull).client_id ?? `client-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    const clientIdIssuedAt = (client as OAuthClientInformationFull).client_id_issued_at ?? Math.floor(Date.now() / 1000);
+    const clientId =
+      (client as OAuthClientInformationFull).client_id ??
+      `client-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const clientIdIssuedAt =
+      (client as OAuthClientInformationFull).client_id_issued_at ?? Math.floor(Date.now() / 1000);
     const full: OAuthClientInformationFull = {
       ...client,
       redirect_uris: Array.isArray(client.redirect_uris)
@@ -91,9 +91,7 @@ export interface CredentialOAuthProviderOptions {
   baseUrl?: string;
 }
 
-export function createCredentialOAuthProvider(
-  options: CredentialOAuthProviderOptions = {}
-): OAuthServerProvider {
+export function createCredentialOAuthProvider(options: CredentialOAuthProviderOptions = {}): OAuthServerProvider {
   const baseUrl = options.baseUrl || getBaseUrl();
 
   return {
@@ -101,11 +99,7 @@ export function createCredentialOAuthProvider(
       return clientsStore;
     },
 
-    async authorize(
-      client: OAuthClientInformationFull,
-      params: AuthorizationParams,
-      res: Response
-    ): Promise<void> {
+    async authorize(client: OAuthClientInformationFull, params: AuthorizationParams, res: Response): Promise<void> {
       const loginUrl = new URL('/oauth/login', baseUrl);
       loginUrl.searchParams.set('state', params.state ?? '');
       loginUrl.searchParams.set('code_challenge', params.codeChallenge);
@@ -153,9 +147,7 @@ export function createCredentialOAuthProvider(
         },
       };
 
-      const accessToken = await new jose.SignJWT(payload)
-        .setProtectedHeader({ alg: 'HS256' })
-        .sign(secret);
+      const accessToken = await new jose.SignJWT(payload).setProtectedHeader({ alg: 'HS256' }).sign(secret);
 
       return {
         access_token: accessToken,
@@ -184,7 +176,7 @@ export function createCredentialOAuthProvider(
       return {
         token,
         clientId: (payload.client_id as string) || 'cursor',
-        scopes: payload.scope ? [(payload.scope as string)] : ['mcp:connect'],
+        scopes: payload.scope ? [payload.scope as string] : ['mcp:connect'],
         expiresAt: exp,
         extra: {
           partnerId: extra.partnerId,

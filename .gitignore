@@ -24,10 +24,15 @@ npm-debug.log*
 # Backup files
 *.bak
 
-# Optional
+# Test & coverage
 coverage/
 .nyc_output/
 *.tsbuildinfo
+
+# Keys and certificates
+*.pem
+*.key
+*.p12
 
 # Next.js signer app
 signer-app/.next/

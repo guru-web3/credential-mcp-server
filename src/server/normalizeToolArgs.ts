@@ -49,7 +49,9 @@ function normalizeKeys(obj: Raw): Raw {
     if (v === undefined) continue;
     const canon = snakeToCamel(k);
     if (Array.isArray(v)) {
-      out[canon] = v.map((item) => (typeof item === 'object' && item !== null && !(item instanceof Date) ? normalizeKeys(item as Raw) : item));
+      out[canon] = v.map((item) =>
+        typeof item === 'object' && item !== null && !(item instanceof Date) ? normalizeKeys(item as Raw) : item
+      );
     } else if (typeof v === 'object' && v !== null && !(v instanceof Date)) {
       out[canon] = normalizeKeys(v as Raw);
     } else {
@@ -75,13 +77,7 @@ export function normalizeToolArgs(toolName: string, args: Raw): Raw {
 
   switch (toolName) {
     case 'credential_setup_pricing': {
-      const priceUsd =
-        pickFirst<unknown>(
-          raw.priceUsd,
-          raw.price_usd,
-          raw.usd,
-          raw.price
-        );
+      const priceUsd = pickFirst<unknown>(raw.priceUsd, raw.price_usd, raw.usd, raw.price);
       return { ...raw, priceUsd: priceUsd ?? 0 };
     }
     case 'credential_create_program':
@@ -110,7 +106,10 @@ export function normalizeToolArgs(toolName: string, args: Raw): Raw {
     case 'credential_list_programs':
       return raw;
     case 'credential_issuance_app_config':
-      return { ...raw, credentialTemplateId: pickFirst(raw.credentialTemplateId, raw.credential_template_id, raw.templateId) };
+      return {
+        ...raw,
+        credentialTemplateId: pickFirst(raw.credentialTemplateId, raw.credential_template_id, raw.templateId),
+      };
     case 'credential_verifier_app_config':
       return { ...raw, programId: pickFirst(raw.programId, raw.program_id) };
     case 'credential_template_info':

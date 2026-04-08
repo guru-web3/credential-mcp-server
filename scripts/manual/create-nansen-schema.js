@@ -153,4 +153,4 @@ async function createSchema() {
 
 createSchema();
 
-// node create-nansen-schema.js eyJraWQiOiI0MWUxNDc2Ny1hZGExLTQxMjQtYjJmNy1iN2MwOTM1ZDIyNWIiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbkFkZHJlc3MiOiIweDYyYTUxNmRhMDZlYWZjMjdhNDgwY2IyMWY3NTQ0Yzk1Y2JkMTY5YTAiLCJwYXJ0bmVySWQiOiJhZWU5ZjZmNi1kY2FlLTQ4MjktYWVmNC1kYTJlMWRhYTY2NjIiLCJpYXQiOjE3NzAxODE2OTcsImV4cCI6MTc3MDE4ODg5N30.UxpHmw7oydICDB0Rn03_ViwYNMiADzQSce0kJks5YGDHJY9lE0bdWmOoGwojw3bQdFrcxTAz5DvwU9guaRl4ow
+// Usage: node create-nansen-schema.js <dashboard-jwt-from-partner-login>

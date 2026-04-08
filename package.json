@@ -12,14 +12,14 @@
     "build": "tsc && chmod +x bin/credential-mcp.js bin/credential-mcp-http.js",
     "run:server": "pnpm run build && node dist/httpServer.js",
     "watch": "tsc --watch",
-    "prepare": "npm run build",
-    "prepublishOnly": "npm run build",
+    "prepare": "pnpm run build",
+    "prepublishOnly": "pnpm run build",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "test": "node --test tests/*.js",
-    "test:ci": "npm run build && npm run test",
+    "test:ci": "pnpm run build && pnpm run test",
     "extract-zephyr": "node scripts/extract-zephyr-scenarios.js",
     "inspector": "npx @modelcontextprotocol/inspector node dist/index.js",
     "signer": "npx -y serve static -p 3747",
@@ -34,8 +34,16 @@
     "automation",
     "ai-assistant"
   ],
-  "author": "Animoca",
+  "author": "Guru Ramu <https://github.com/gururamu>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gururamu/credential-mcp-server.git"
+  },
+  "homepage": "https://github.com/gururamu/credential-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/gururamu/credential-mcp-server/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "@x402/core": "^2.6.0",

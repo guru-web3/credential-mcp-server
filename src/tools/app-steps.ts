@@ -32,7 +32,13 @@ export async function getAppSteps(args: AppStepsArgs) {
         'Call credential_issuance_app_config to get the full .env snippet. Default: if NEXT_PUBLIC_PARTNER_PUBLIC_KEY or PARTNER_PRIVATE_KEY is not given, run pnpm run generate-keys and populate .env.local. When writing .env.local: paste the entire snippet including NEXT_PUBLIC_CREDENTIALS_CONFIG with dataPoints (do not remove dataPoints or the built-in mock will not work). Do not edit app/(home)/api/user/user-data/route.ts when only mocking; rely on the built-in mock. Mock by type: string → "test", integer/number → 0, boolean → false. Add a TODO in app/(home)/api/user/user-data/route.ts for plugging in a real API later. See MCP docs "User data and mocking" and mcp-issuance.md for default behaviors.',
       commands: [],
     },
-    { step: 4, title: 'Run dev server', commands: ['pnpm dev'], detail: 'Run pnpm dev; ensure port 3000 is in use (kill any process already using it if needed). Open http://localhost:3000. For local HTTPS use pnpm dev:https (https://localhost:3000).' },
+    {
+      step: 4,
+      title: 'Run dev server',
+      commands: ['pnpm dev'],
+      detail:
+        'Run pnpm dev; ensure port 3000 is in use (kill any process already using it if needed). Open http://localhost:3000. For local HTTPS use pnpm dev:https (https://localhost:3000).',
+    },
     {
       step: 5,
       title: 'Local JWKS testing (optional, before deploy)',
@@ -44,7 +50,8 @@ export async function getAppSteps(args: AppStepsArgs) {
     {
       step: 7,
       title: 'Deploy',
-      detail: 'Deploy to Vercel or Netlify; add all .env.local variables to the host. Use the same PARTNER_PRIVATE_KEY and public key.',
+      detail:
+        'Deploy to Vercel or Netlify; add all .env.local variables to the host. Use the same PARTNER_PRIVATE_KEY and public key.',
     },
     {
       step: 8,

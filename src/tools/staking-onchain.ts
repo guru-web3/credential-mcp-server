@@ -25,7 +25,10 @@ function requireStakingWallet() {
 }
 
 export const StakeMocaArgsSchema = z.object({
-  amountMoca: z.union([z.string(), z.number()]).transform((v) => (typeof v === 'number' ? String(v) : v)).describe('Amount of MOCA to stake (e.g. "10" for 10 MOCA)'),
+  amountMoca: z
+    .union([z.string(), z.number()])
+    .transform((v) => (typeof v === 'number' ? String(v) : v))
+    .describe('Amount of MOCA to stake (e.g. "10" for 10 MOCA)'),
 });
 
 export async function stakeMoca(args: z.infer<typeof StakeMocaArgsSchema>) {
@@ -35,7 +38,9 @@ export async function stakeMoca(args: z.infer<typeof StakeMocaArgsSchema>) {
   if (readContract) {
     const maxSingle = await readContract.read.MAX_SINGLE_STAKE_AMOUNT();
     if (amountInWei > maxSingle) {
-      throw new Error(`Amount exceeds MAX_SINGLE_STAKE_AMOUNT (${maxSingle}). Use a smaller amount or multiple stakes.`);
+      throw new Error(
+        `Amount exceeds MAX_SINGLE_STAKE_AMOUNT (${maxSingle}). Use a smaller amount or multiple stakes.`
+      );
     }
   }
   const hash = await contract.write.stakeMoca({ value: amountInWei, gas: MOCA_DEFAULT_GAS_LIMIT });
@@ -47,13 +52,20 @@ export async function stakeMoca(args: z.infer<typeof StakeMocaArgsSchema>) {
         `Stake transaction reverted (tx: ${receipt.transactionHash}). Check the block explorer for the revert reason.`
       );
     }
-    return { success: true, txHash: receipt.transactionHash, message: `Staked ${args.amountMoca} MOCA. Tx: ${receipt.transactionHash}` };
+    return {
+      success: true,
+      txHash: receipt.transactionHash,
+      message: `Staked ${args.amountMoca} MOCA. Tx: ${receipt.transactionHash}`,
+    };
   }
   return { success: true, txHash: hash, message: `Staked ${args.amountMoca} MOCA. Tx: ${hash}` };
 }
 
 export const UnstakeMocaArgsSchema = z.object({
-  amountMoca: z.union([z.string(), z.number()]).transform((v) => (typeof v === 'number' ? String(v) : v)).describe('Amount of MOCA to initiate unstake for'),
+  amountMoca: z
+    .union([z.string(), z.number()])
+    .transform((v) => (typeof v === 'number' ? String(v) : v))
+    .describe('Amount of MOCA to initiate unstake for'),
 });
 
 export async function unstakeMoca(args: z.infer<typeof UnstakeMocaArgsSchema>) {
@@ -78,7 +90,7 @@ export async function unstakeMoca(args: z.infer<typeof UnstakeMocaArgsSchema>) {
     if (receipt.status !== 'success') {
       throw new Error(
         `Unstake transaction reverted (tx: ${receipt.transactionHash}). ` +
-        'Ensure the amount does not exceed your staked MOCA. Check the block explorer for the revert reason.'
+          'Ensure the amount does not exceed your staked MOCA. Check the block explorer for the revert reason.'
       );
     }
     return {
@@ -95,7 +107,10 @@ export async function unstakeMoca(args: z.infer<typeof UnstakeMocaArgsSchema>) {
 }
 
 export const ClaimUnstakeMocaArgsSchema = z.object({
-  timestamps: z.array(z.union([z.number(), z.string()])).transform((arr) => arr.map((t) => (typeof t === 'string' ? BigInt(t) : BigInt(t)))).describe('Array of claimable timestamps from prior initiateUnstake (e.g. from UnstakeInitiated event)'),
+  timestamps: z
+    .array(z.union([z.number(), z.string()]))
+    .transform((arr) => arr.map((t) => (typeof t === 'string' ? BigInt(t) : BigInt(t))))
+    .describe('Array of claimable timestamps from prior initiateUnstake (e.g. from UnstakeInitiated event)'),
 });
 
 export async function claimUnstakeMoca(args: z.infer<typeof ClaimUnstakeMocaArgsSchema>) {
@@ -107,10 +122,14 @@ export async function claimUnstakeMoca(args: z.infer<typeof ClaimUnstakeMocaArgs
     if (receipt.status !== 'success') {
       throw new Error(
         `Claim unstake transaction reverted (tx: ${receipt.transactionHash}). ` +
-        'Ensure timestamps are after UNSTAKE_DELAY and correspond to prior initiateUnstake. Check the block explorer for the revert reason.'
+          'Ensure timestamps are after UNSTAKE_DELAY and correspond to prior initiateUnstake. Check the block explorer for the revert reason.'
       );
     }
-    return { success: true, txHash: receipt.transactionHash, message: `Claimed unstaked MOCA. Tx: ${receipt.transactionHash}` };
+    return {
+      success: true,
+      txHash: receipt.transactionHash,
+      message: `Claimed unstaked MOCA. Tx: ${receipt.transactionHash}`,
+    };
   }
   return { success: true, txHash: hash, message: `Claimed unstaked MOCA. Tx: ${hash}` };
 }

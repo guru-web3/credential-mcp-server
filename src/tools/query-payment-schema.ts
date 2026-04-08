@@ -9,7 +9,7 @@ import { getMocaChainApiUrl, fromSessionEnvironment } from '../config.js';
 
 function generatePaymentHeaders(dashboardToken: string, issuerId: string): Record<string, string> {
   const timestamp = Date.now();
-  
+
   // Payment API uses different signature - just basic headers
   return {
     'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ export async function queryPaymentSchema(schemaId?: string): Promise<any> {
 
   try {
     const headers = generatePaymentHeaders(dashboardToken!, issuerId!);
-    
+
     const response = await axios.get(url, {
       params,
       headers,

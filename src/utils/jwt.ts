@@ -3,10 +3,7 @@ import * as jose from 'jose';
 /**
  * Generate JWT token for partner authentication using Ethereum private key (secp256k1)
  */
-export async function generatePartnerJWT(
-  privateKeyPem: string,
-  partnerId?: string
-): Promise<string> {
+export async function generatePartnerJWT(privateKeyPem: string, partnerId?: string): Promise<string> {
   try {
     // Import Ethereum private key (secp256k1 curve)
     const privateKey = await jose.importPKCS8(privateKeyPem, 'ES256K');

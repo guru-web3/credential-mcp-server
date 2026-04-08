@@ -13,7 +13,10 @@ export const ListCredentialTemplatesArgsSchema = z.object({
   size: z.coerce.number().min(1).max(100).default(20).describe('Page size'),
   searchStr: z.string().optional().describe('Optional search string'),
   sortField: z.string().default('create_at').describe('Sort field'),
-  order: z.union([z.enum(['asc', 'desc']), z.string().transform((s) => (String(s).toLowerCase() === 'asc' ? 'asc' : 'desc'))]).default('desc').describe('Sort order'),
+  order: z
+    .union([z.enum(['asc', 'desc']), z.string().transform((s) => (String(s).toLowerCase() === 'asc' ? 'asc' : 'desc'))])
+    .default('desc')
+    .describe('Sort order'),
 });
 
 export type ListCredentialTemplatesArgs = z.infer<typeof ListCredentialTemplatesArgsSchema>;
@@ -56,12 +59,9 @@ export async function listCredentialTemplates(
     ],
   };
 
-  const response = await apiRequest<{ page?: PageResult }>(
-    'POST',
-    '/issuer/credentialTemplateQuery',
-    body,
-    { 'x-issuer-id': issuerId }
-  );
+  const response = await apiRequest<{ page?: PageResult }>('POST', '/issuer/credentialTemplateQuery', body, {
+    'x-issuer-id': issuerId,
+  });
 
   const page = response.data?.page;
   const records = page?.records ?? [];

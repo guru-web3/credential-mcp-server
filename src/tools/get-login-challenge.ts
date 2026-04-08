@@ -31,7 +31,8 @@ export async function getLoginChallenge(args: z.infer<typeof GetLoginChallengeAr
 
   return {
     success: true,
-    message: 'Use this challenge to sign in your wallet. Open the signer URL or paste the login message and timestamp into the signer page, then complete authentication via Cursor Connect.',
+    message:
+      'Use this challenge to sign in your wallet. Open the signer URL or paste the login message and timestamp into the signer page, then complete authentication via Cursor Connect.',
     environment,
     walletAddress: addr,
     loginMessage,

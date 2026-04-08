@@ -16,11 +16,17 @@ export const ListSchemasArgsSchema = z.object({
   size: z.coerce.number().min(1).max(100).default(20).describe('Page size'),
   searchStr: z.string().optional().describe('Optional search string'),
   filterType: z
-    .union([filterTypeEnum, z.string().transform((s) => (String(s).toLowerCase().includes('other') ? 'other_schemas' : 'own_schemas'))])
+    .union([
+      filterTypeEnum,
+      z.string().transform((s) => (String(s).toLowerCase().includes('other') ? 'other_schemas' : 'own_schemas')),
+    ])
     .default('own_schemas')
     .describe('own_schemas = issuer schemas, other_schemas = search others'),
   sortField: z.string().default('create_at').describe('Sort field'),
-  order: z.union([orderEnum, z.string().transform((s) => (String(s).toLowerCase() === 'asc' ? 'asc' : 'desc'))]).default('desc').describe('Sort order'),
+  order: z
+    .union([orderEnum, z.string().transform((s) => (String(s).toLowerCase() === 'asc' ? 'asc' : 'desc'))])
+    .default('desc')
+    .describe('Sort order'),
 });
 
 export type ListSchemasArgs = z.infer<typeof ListSchemasArgsSchema>;
@@ -65,12 +71,9 @@ export async function listSchemas(
     ],
   };
 
-  const response = await apiRequest<{ page?: PageResult }>(
-    'POST',
-    '/management/scheme/query',
-    body,
-    { 'x-issuer-id': issuerId }
-  );
+  const response = await apiRequest<{ page?: PageResult }>('POST', '/management/scheme/query', body, {
+    'x-issuer-id': issuerId,
+  });
 
   const page = response.data?.page;
   const records = page?.records ?? [];

@@ -42,9 +42,7 @@ export async function x402PayAndVerify(args: X402PayAndVerifyArgs): Promise<unkn
     const paymentResponseHeader = response.headers.get('payment-response');
     if (paymentResponseHeader) {
       try {
-        paymentInfo = JSON.parse(
-          Buffer.from(paymentResponseHeader, 'base64').toString('utf-8'),
-        );
+        paymentInfo = JSON.parse(Buffer.from(paymentResponseHeader, 'base64').toString('utf-8'));
       } catch {
         paymentInfo = { raw: paymentResponseHeader };
       }
@@ -74,9 +72,7 @@ export async function x402PayAndVerify(args: X402PayAndVerifyArgs): Promise<unkn
       const paymentRequiredHeader = response.headers.get('payment-required');
       if (paymentRequiredHeader) {
         try {
-          requirements = JSON.parse(
-            Buffer.from(paymentRequiredHeader, 'base64').toString('utf-8'),
-          );
+          requirements = JSON.parse(Buffer.from(paymentRequiredHeader, 'base64').toString('utf-8'));
         } catch {
           // ignore
         }

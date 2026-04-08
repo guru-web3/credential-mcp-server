@@ -10,8 +10,15 @@ const operatorEnum = z.enum(OPERATORS);
 
 export const CreateProgramsArgsSchema = z.object({
   schemaId: z.string().optional().describe('Schema ID (uses last created schema if not provided)'),
-  deploy: z.coerce.boolean().optional().default(true).describe('If true (default), deploy each program after create (status DEPLOYING_W) so it becomes active.'),
-  pricingModel: z.enum(['each_attempt', 'pay_on_success']).optional().default('pay_on_success')
+  deploy: z.coerce
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('If true (default), deploy each program after create (status DEPLOYING_W) so it becomes active.'),
+  pricingModel: z
+    .enum(['each_attempt', 'pay_on_success'])
+    .optional()
+    .default('pay_on_success')
     .describe('Pricing model to look up. Defaults to pay_on_success.'),
   defaultCredentialIssuerDid: z
     .string()
@@ -22,29 +29,48 @@ export const CreateProgramsArgsSchema = z.object({
     .nullable()
     .optional()
     .describe('Explicit issuer pricing UUID override; when omitted, auto-resolved from payment API'),
-  programs: z.array(z.object({
-    programName: z.string().describe('Unique program name (e.g., nft_holder_standard)'),
-    conditions: z
-      .array(
-        z.object({
-          attribute: z.string().describe('Schema attribute to verify'),
-          operator: z
-            .union([operatorEnum, z.string().transform((s) => (OPERATORS.includes(String(s).trim() as typeof OPERATORS[number]) ? String(s).trim() as typeof OPERATORS[number] : '='))])
-            .describe('Comparison operator'),
-          value: z.union([z.string(), z.boolean(), z.coerce.number()]).describe('Value to compare against (string, boolean, or number; strict boolean so true/false are not coerced to 1/0)'),
-        })
-      )
-      .min(1, 'At least one condition is required per program')
-      .describe('Verification conditions (all must be true)'),
-  }))
-  .min(1, 'At least one program is required')
-  .describe('List of verification programs to create'),
+  programs: z
+    .array(
+      z.object({
+        programName: z.string().describe('Unique program name (e.g., nft_holder_standard)'),
+        conditions: z
+          .array(
+            z.object({
+              attribute: z.string().describe('Schema attribute to verify'),
+              operator: z
+                .union([
+                  operatorEnum,
+                  z
+                    .string()
+                    .transform((s) =>
+                      OPERATORS.includes(String(s).trim() as (typeof OPERATORS)[number])
+                        ? (String(s).trim() as (typeof OPERATORS)[number])
+                        : '='
+                    ),
+                ])
+                .describe('Comparison operator'),
+              value: z
+                .union([z.string(), z.boolean(), z.coerce.number()])
+                .describe(
+                  'Value to compare against (string, boolean, or number; strict boolean so true/false are not coerced to 1/0)'
+                ),
+            })
+          )
+          .min(1, 'At least one condition is required per program')
+          .describe('Verification conditions (all must be true)'),
+      })
+    )
+    .min(1, 'At least one program is required')
+    .describe('List of verification programs to create'),
 });
 
 /**
  * Map to circuit operators. Dashboard/API may not support $gte/$lte; convert to $gt/$lt for integers.
  */
-function mapOperatorAndValue(operator: string, value: string | number | boolean): { op: string; value: string | number | boolean } {
+function mapOperatorAndValue(
+  operator: string,
+  value: string | number | boolean
+): { op: string; value: string | number | boolean } {
   const num = typeof value === 'number' ? value : Number(value);
   const isInt = Number.isInteger(num);
   if (operator === '>=' && isInt) {
@@ -110,15 +136,14 @@ function generatePaymentGetHeaders(dashboardToken: string, verifierId: string): 
   const firstHash = CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(bodyStr)).toString();
   const combined = `${firstHash}_${timestamp}`;
   const key = CryptoJS.enc.Utf8.parse(getCredentialApiSignatureKey());
-  const encrypted = CryptoJS.AES.encrypt(
-    CryptoJS.enc.Utf8.parse(combined),
-    key,
-    { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 },
-  );
+  const encrypted = CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(combined), key, {
+    mode: CryptoJS.mode.ECB,
+    padding: CryptoJS.pad.Pkcs7,
+  });
   const signature = CryptoJS.SHA256(encrypted.ciphertext).toString();
 
   return {
-    'accept': 'application/json, text/plain, */*',
+    accept: 'application/json, text/plain, */*',
     'Content-Type': 'application/json',
     'x-signature': signature,
     'x-timestamp': timestamp,
@@ -134,7 +159,7 @@ function generatePaymentGetHeaders(dashboardToken: string, verifierId: string): 
  */
 async function fetchPricingInfo(
   schemaId: string,
-  pricingModel: 'each_attempt' | 'pay_on_success',
+  pricingModel: 'each_attempt' | 'pay_on_success'
 ): Promise<PricingInfo | null> {
   const dashboardToken = session.get('dashboardToken');
   const verifierId = session.get('verifierId');
@@ -195,14 +220,16 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
   if (!pricingInfo) {
     throw new Error(
       `No pricing configuration found for schema ${schemaId} with pricingModel "${requestedPricingModel}". ` +
-      'Run credential_setup_pricing first to configure pricing for this schema.',
+        'Run credential_setup_pricing first to configure pricing for this schema.'
     );
   }
 
   const resolvedPricingModel = pricingInfo.pricingModel;
   const resolvedPricingId = defaultIssuerPricingId !== undefined ? defaultIssuerPricingId : pricingInfo.id;
 
-  console.log(`[DEBUG] Resolved pricing: model=${resolvedPricingModel}, id=${resolvedPricingId}, apiIssuerDid=${pricingInfo.issuerDid}`);
+  console.log(
+    `[DEBUG] Resolved pricing: model=${resolvedPricingModel}, id=${resolvedPricingId}, apiIssuerDid=${pricingInfo.issuerDid}`
+  );
 
   // Fetch schema by ID so zkQuery uses correct type and context (required for backend validation)
   let schemaType = session.get('schemaType');
@@ -233,10 +260,17 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
   }
 
   if (!schemaType) {
-    throw new Error('Schema type is required for zkQuery. Fetch schema by schemaId failed or schema has no schemeType.');
+    throw new Error(
+      'Schema type is required for zkQuery. Fetch schema by schemaId failed or schema has no schemeType.'
+    );
   }
 
-  console.log('[DEBUG] Using schemaType:', schemaType, 'schemaContext:', schemaContext?.slice(0, 60) + (schemaContext && schemaContext.length > 60 ? '...' : ''));
+  console.log(
+    '[DEBUG] Using schemaType:',
+    schemaType,
+    'schemaContext:',
+    schemaContext?.slice(0, 60) + (schemaContext && schemaContext.length > 60 ? '...' : '')
+  );
 
   const createdPrograms: Array<{ programId: string; programName: string }> = [];
   const errors: Array<{ programName: string; error: string }> = [];
@@ -279,7 +313,9 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
         zkQueryInfoVOS: zkQueryInfoVOSPayload,
       };
 
-      console.log(`[DEBUG] Creating program: ${program.programName} (${program.conditions.length} condition(s), ${zkQueryInfoVOSPayload.length} zkQuery(s))`);
+      console.log(
+        `[DEBUG] Creating program: ${program.programName} (${program.conditions.length} condition(s), ${zkQueryInfoVOSPayload.length} zkQuery(s))`
+      );
       program.conditions.forEach((c, i) => {
         const cs = buildSingleConditionCredentialSubject(c);
         console.log(`[DEBUG] zkQuery[${i}] credentialSubject:`, JSON.stringify(cs));
@@ -311,7 +347,7 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
               { 'x-verifier-id': verifierId! }
             );
             const queryData = (queryRes as any).data;
-            zkQueryInfoVOS = Array.isArray(queryData) ? queryData : queryData?.list ?? [];
+            zkQueryInfoVOS = Array.isArray(queryData) ? queryData : (queryData?.list ?? []);
           } catch (e) {
             console.error('[DEBUG] Could not fetch zkQuery for deploy:', (e as Error).message);
           }
@@ -353,7 +389,8 @@ export async function createVerificationPrograms(args: z.infer<typeof CreateProg
       const apiResp = error.apiResponse ?? error.response?.data;
       let errorMessage = error.message;
       if (errorMessage.includes('system error') && !errorMessage.includes('Troubleshooting')) {
-        const hint = ' Troubleshooting: 1) Ensure the issuer DID is registered for this verifier. 2) Ensure the schema exists and is published. 3) Check credential API backend logs for the real exception (SYSTEM_ERROR masks it).';
+        const hint =
+          ' Troubleshooting: 1) Ensure the issuer DID is registered for this verifier. 2) Ensure the schema exists and is published. 3) Check credential API backend logs for the real exception (SYSTEM_ERROR masks it).';
         errorMessage = errorMessage + hint;
         if (apiResp) {
           errorMessage += ` Full API response: ${JSON.stringify(apiResp)}`;

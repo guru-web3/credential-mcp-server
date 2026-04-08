@@ -43,22 +43,18 @@ export async function verifySchemaPublished(args: z.infer<typeof VerifySchemaPub
       schemeTitle: string;
       schemeType: string;
       schemeDstorageId?: string;
-    }>(
-      'POST',
-      '/management/scheme/queryById',
-      { schemeId: schemaId },
-      { 'x-issuer-id': issuerId }
-    );
+    }>('POST', '/management/scheme/queryById', { schemeId: schemaId }, { 'x-issuer-id': issuerId });
 
     const schemaData = response.data;
     console.error(`   Schema: ${schemaData.schemeTitle} (${schemaData.schemeType})`);
-    
+
     if (!schemaData.schemeDstorageId) {
       console.error(`   ✗ Not published to OSS yet`);
       return {
         published: false,
         accessible: false,
-        message: 'Schema is not published to OSS yet. Schemas are published when created; if this schema was created before that change, re-create it or contact support.',
+        message:
+          'Schema is not published to OSS yet. Schemas are published when created; if this schema was created before that change, re-create it or contact support.',
         schemaId: schemaId,
       };
     }
@@ -68,16 +64,16 @@ export async function verifySchemaPublished(args: z.infer<typeof VerifySchemaPub
     // Try to access the schema URL
     const storageUrl = `https://dstorage.zkme.me/api/v1/p/${schemaData.schemeDstorageId}`;
     console.error(`   Checking accessibility...`);
-    
+
     try {
-      const storageResponse = await axios.get(storageUrl, { 
+      const storageResponse = await axios.get(storageUrl, {
         timeout: 10000,
-        validateStatus: (status) => status < 500
+        validateStatus: (status) => status < 500,
       });
-      
+
       if (storageResponse.status === 200) {
         console.error(`   ✓ Schema is published and accessible`);
-        
+
         return {
           published: true,
           accessible: true,
@@ -88,7 +84,7 @@ export async function verifySchemaPublished(args: z.infer<typeof VerifySchemaPub
         };
       } else {
         console.error(`   ⚠️  Published but got status ${storageResponse.status}`);
-        
+
         return {
           published: true,
           accessible: false,
@@ -100,7 +96,7 @@ export async function verifySchemaPublished(args: z.infer<typeof VerifySchemaPub
       }
     } catch (storageError: any) {
       console.error(`   ⚠️  Published but not yet accessible (may need time to propagate)`);
-      
+
       return {
         published: true,
         accessible: false,

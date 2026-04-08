@@ -61,14 +61,11 @@ describe('CreateProgramsArgsSchema', () => {
     assert.strictEqual(result.programs[2].conditions[0].value, true);
   });
 
-  it('rejects invalid operator', () => {
-    assert.throws(
-      () =>
-        CreateProgramsArgsSchema.parse({
-          programs: [{ programName: 'p1', conditions: [{ attribute: 'a', operator: '~=', value: 1 }] }],
-        }),
-      (err) => err.message.includes('enum') || err.message.includes('operator')
-    );
+  it('normalizes invalid operator to default (=)', () => {
+    const result = CreateProgramsArgsSchema.parse({
+      programs: [{ programName: 'p1', conditions: [{ attribute: 'a', operator: '~=', value: 1 }] }],
+    });
+    assert.strictEqual(result.programs[0].conditions[0].operator, '=');
   });
 
   it('rejects empty programs array', () => {

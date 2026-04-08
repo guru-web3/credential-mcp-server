@@ -43,10 +43,8 @@ describe('ListSchemasArgsSchema', () => {
     );
   });
 
-  it('rejects invalid filterType', () => {
-    assert.throws(
-      () => ListSchemasArgsSchema.parse({ filterType: 'all' }),
-      (err) => err.message.includes('enum') || err.message.includes('own_schemas')
-    );
+  it('normalizes invalid filterType to default (own_schemas)', () => {
+    const result = ListSchemasArgsSchema.parse({ filterType: 'all' });
+    assert.strictEqual(result.filterType, 'own_schemas');
   });
 });

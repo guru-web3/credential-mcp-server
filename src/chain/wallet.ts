@@ -36,7 +36,7 @@ function getChain(): Chain | null {
 function getAccount(): Account | null {
   const pk = process.env[WALLET_ENV_PRIVATE_KEY];
   if (pk) {
-    const key = pk.startsWith('0x') ? pk as `0x${string}` : `0x${pk}`;
+    const key = pk.startsWith('0x') ? (pk as `0x${string}`) : `0x${pk}`;
     try {
       return privateKeyToAccount(key as `0x${string}`);
     } catch {

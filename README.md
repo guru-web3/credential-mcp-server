@@ -8,13 +8,31 @@ Built by [Guru Ramu](https://github.com/gururamu).
 
 ## The Problem
 
-Building and managing credential systems on the AIR/MOCA ecosystem requires navigating multiple dashboards, REST APIs, chain RPCs, and payment contracts. Each step in the credential lifecycle -- schema creation, pricing configuration, issuance program setup, verification program deployment, on-chain staking, USD8 payment management -- lives in a different interface. AI agents, which are increasingly the primary interface for developers, cannot operate any of these systems. This blocks the vision described in the AIR x ERC-8004 Delegated Verification Framework: agents that can autonomously verify user credentials with proof reuse. At the identity vertex of the Golden Triangle (Digital Identity + Stablecoin + AI), credential infrastructure must be agent-operable for delegated verification to work at scale.
+Building and managing credential systems on the AIR/MOCA ecosystem requires navigating multiple dashboards, REST APIs, chain RPCs, and payment contracts. Each step in the credential lifecycle -- schema creation, pricing configuration, issuance program setup, verification program deployment, on-chain staking, USD8 payment management -- lives in a different interface.
+
+AI agents, which are increasingly the primary interface for developers, cannot operate any of these systems. This blocks the vision described in the AIR x ERC-8004 Delegated Verification Framework: agents that can autonomously verify user credentials with proof reuse.
+
+At the identity vertex of the Golden Triangle (Digital Identity + Stablecoin + AI), credential infrastructure must be agent-operable for delegated verification to work at scale.
 
 ---
 
 ## The Solution
 
-An MCP server that exposes the entire credential lifecycle as 20 natural-language tools. An AI agent in Cursor or Claude Desktop can create schemas, configure pricing, deploy issuance and verification programs, manage on-chain staking and USD8 payments, scaffold template apps, and call x402-gated APIs -- all through conversation. The server handles P-256 authentication, chain interactions via viem, and x402 payment protocol integration. It enables the M2 milestone (delegated identity + verification gateway) by making credential infrastructure agent-operable -- the foundation for the AgentDelegationRegistry and proof cache layer described in the ERC-8004 framework.
+An MCP server that exposes the entire credential lifecycle as **21 natural-language tools**. An AI agent in Cursor or Claude Desktop can create schemas, configure pricing, deploy issuance and verification programs, manage on-chain staking and USD8 payments, scaffold template apps, and call x402-gated APIs -- all through conversation.
+
+The server handles P-256 authentication, chain interactions via viem, and x402 payment protocol integration. It enables the M2 milestone (delegated identity + verification gateway) by making credential infrastructure agent-operable -- the foundation for the AgentDelegationRegistry and proof cache layer described in the ERC-8004 framework.
+
+### What This Saves
+
+| Without MCP Server | With MCP Server |
+|---|---|
+| Navigate dashboard, find schema page, fill form fields, submit, wait for publish | `"Create a schema called kyc-verified with fields: name (string), riskScore (integer)"` |
+| Open pricing panel, select model, enter price, select schema, submit | `"Set up free pricing for all verifications"` |
+| Write contract call code, manage gas, sign tx, track receipt | `"Stake 100 MOCA for my issuer"` |
+| Build fetch wrapper, handle 402 responses, sign EIP-3009, retry | `"Call this x402-gated API"` |
+| Clone template repo, find env docs, copy IDs from dashboard, configure JWKS | `"Set up the issuance app for my latest schema"` |
+
+**End result:** What previously took 30-60 minutes of dashboard navigation and manual API calls can be done in a single conversation.
 
 ---
 
@@ -44,7 +62,7 @@ An MCP server that exposes the entire credential lifecycle as 20 natural-languag
 - **Dual transport**: STDIO for Cursor/Claude Desktop, Streamable HTTP for remote and web-based clients
 - **Signer app** (Next.js): browser-based companion for on-chain signing when a local private key is not available
 - **Central tool registry**: single-file registration of name, schema, and handler -- no scattered switch statements
-- **Code quality**: ESLint 9 flat config + Prettier, with validation tests for every tool
+- **Code quality**: ESLint 9 flat config + Prettier, strict TypeScript, zod validation with 50+ unit tests
 
 ---
 
@@ -72,7 +90,7 @@ flowchart TD
 
     subgraph Core["MCP Core"]
         FACTORY["createMcpServer<br/>tools/list, tools/call,<br/>resources, prompts"]
-        REGISTRY["Tool Registry<br/>20 tools: name + Zod schema + handler"]
+        REGISTRY["Tool Registry<br/>21 tools: name + Zod schema + handler"]
         NORMALIZE["normalizeToolArgs<br/>LLM quirk handling"]
     end
 
@@ -154,7 +172,7 @@ flowchart LR
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/anthropics/credential-mcp-server.git
+git clone https://github.com/gururamu/credential-mcp-server.git
 cd credential-mcp-server
 pnpm install
 ```
@@ -200,7 +218,7 @@ node dist/httpServer.js
 
 ## MCP Tools Reference
 
-### Credential Management
+### Credential Management (8 tools)
 
 | Tool | Purpose |
 |---|---|
@@ -213,7 +231,7 @@ node dist/httpServer.js
 | `credential_list_programs` | List verification programs |
 | `credential_docs` | Get step-by-step documentation for issuance and/or verification flows |
 
-### App Scaffolding
+### App Scaffolding (5 tools)
 
 | Tool | Purpose |
 |---|---|
@@ -223,9 +241,7 @@ node dist/httpServer.js
 | `credential_app_steps` | Get ordered develop-to-deploy steps for issuance or verifier apps |
 | `credential_configure_issuer_jwks` | Set JWKS URL and whitelist domain for credential issuance |
 
----
-
-## On-Chain Tools
+### On-Chain Operations (7 tools)
 
 These tools interact directly with smart contracts on MOCA Chain via viem. They require `CREDENTIAL_MCP_PRIVATE_KEY` (or `CREDENTIAL_MCP_SEED_PHRASE`) to be set.
 
@@ -239,17 +255,7 @@ These tools interact directly with smart contracts on MOCA Chain via viem. They 
 | `credential_unstake_moca` | Initiate MOCA unstake (subject to delay period) |
 | `credential_claim_unstake_moca` | Claim MOCA after the unstake delay has elapsed |
 
-### Example: natural-language on-chain operation
-
-> "Stake 100 MOCA for my issuer"
-
-The agent resolves `credential_stake_moca`, builds and signs the transaction using your configured wallet, submits it to MOCA Chain, and returns the transaction hash.
-
----
-
-## x402 Payment Protocol
-
-The `x402_pay_and_verify` tool enables AI agents to call x402-gated HTTP endpoints with automatic payment. Under the hood it uses `@x402/fetch` to detect `402 Payment Required` responses, construct an EIP-3009 `transferWithAuthorization` signature, and retry the request with the payment proof attached.
+### x402 Payment Protocol (1 tool)
 
 | Tool | Purpose |
 |---|---|
@@ -264,6 +270,16 @@ The `x402_pay_and_verify` tool enables AI agents to call x402-gated HTTP endpoin
 
 No manual token approvals or pre-funding steps are needed beyond having USD8 in the wallet.
 
+### Example: Natural Language Interaction
+
+> "Create a credential schema called employee-badge with fields: name (string), department (string), clearanceLevel (integer)"
+
+> "Set up free pricing for all verifications on my latest schema"
+
+> "Deposit 10 USD8 to my verifier balance"
+
+> "Stake 100 MOCA for my issuer"
+
 ---
 
 ## Try It in Cursor
@@ -277,22 +293,15 @@ Add this to your Cursor MCP configuration (`.cursor/mcp.json`):
       "command": "node",
       "args": ["/absolute/path/to/credential-mcp-server/dist/index.js"],
       "env": {
-        "CREDENTIAL_MCP_ENVIRONMENT": "staging",
-        "CREDENTIAL_MCP_PRIVATE_KEY": "0x...",
-        "CREDENTIAL_API_SIGNATURE_KEY": "your-api-signature-key"
+        "CREDENTIAL_MCP_ENVIRONMENT": "sandbox",
+        "CREDENTIAL_MCP_PRIVATE_KEY": "0x..."
       }
     }
   }
 }
 ```
 
-Replace the paths and keys with your actual values. Once configured, open Cursor and try:
-
-> "Create a credential schema called employee-badge with fields: name (string), department (string), clearanceLevel (integer)"
-
-> "Set up free pricing for all verifications on my latest schema"
-
-> "Deposit 10 USD8 to my verifier balance"
+Replace the paths and keys with your actual values.
 
 ---
 
@@ -304,16 +313,22 @@ credential-mcp-server/
     index.ts              # STDIO entry point
     httpServer.ts         # HTTP/SSE entry point
     config.ts             # Environment and chain defaults
+    session.ts            # Auth session and state management
     server/
       createMcpServer.ts  # MCP server factory
       toolRegistry.ts     # Central tool registry (single source of truth)
-    tools/                # One file per MCP tool
+      normalizeToolArgs.ts # LLM argument normalization
+    tools/                # One file per MCP tool (21 tools)
     chain/                # viem wallet, contract ABIs, gas helpers
     auth/                 # P-256 key auth, OAuth provider, session
     utils/                # API client, JWT, x402 helpers
+    resources/            # MCP resources (docs, template info)
+    prompts/              # MCP prompts (quickstart flows)
   signer-app/             # Next.js companion for browser-based signing
   tests/                  # Validation tests for each tool
   schemas/                # Example credential schema JSON files
+  scripts/                # Utility and manual test scripts
+  docs/                   # Developer guides, demo scripts, test scenarios
   bin/                    # CLI entry points
 ```
 
@@ -322,21 +337,19 @@ credential-mcp-server/
 ## Development
 
 ```bash
-# Watch mode (recompile on change)
-pnpm watch
+pnpm install          # install dependencies
+pnpm build            # compile TypeScript to dist/
+pnpm watch            # recompile on change
 
-# Lint
-pnpm lint
-pnpm lint:fix
+pnpm test             # run validation tests
+pnpm test:ci          # build + test
 
-# Format
-pnpm format
+pnpm lint             # check lint errors
+pnpm lint:fix         # auto-fix lint errors
+pnpm format           # format with prettier
+pnpm format:check     # check formatting
 
-# Run tests
-pnpm test
-
-# MCP Inspector (interactive tool testing)
-pnpm inspector
+pnpm inspector        # launch MCP Inspector for interactive testing
 ```
 
 ---
@@ -345,14 +358,13 @@ pnpm inspector
 
 | Technology | Role |
 |---|---|
-| [TypeScript](https://www.typescriptlang.org/) | Language |
+| [TypeScript](https://www.typescriptlang.org/) | Language (strict mode, ES2022) |
 | [MCP SDK](https://github.com/modelcontextprotocol/typescript-sdk) | Model Context Protocol server framework |
 | [viem](https://viem.sh/) | Ethereum/MOCA Chain interactions and wallet management |
+| [zod](https://zod.dev/) | Runtime schema validation for tool inputs |
 | [Express](https://expressjs.com/) | HTTP transport layer |
 | [Next.js](https://nextjs.org/) | Signer app for browser-based on-chain actions |
-| [zod](https://zod.dev/) | Runtime schema validation for tool inputs |
-| [@x402/fetch](https://github.com/coinbase/x402) | x402 payment protocol client |
-| [@x402/evm](https://github.com/coinbase/x402) | EVM payment verification and EIP-3009 signatures |
+| [@x402/fetch](https://github.com/coinbase/x402) | x402 payment protocol client (EIP-3009) |
 | [jose](https://github.com/panva/jose) | JWT/JWK operations for P-256 authentication |
 | [ESLint](https://eslint.org/) + [Prettier](https://prettier.io/) | Code quality and formatting |
 
@@ -360,4 +372,4 @@ pnpm inspector
 
 ## License
 
-MIT
+[MIT](LICENSE)

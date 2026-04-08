@@ -55,7 +55,9 @@ export function getPaymentsControllerReadContract(): PaymentsControllerContract 
  */
 export function getIssuerStakingControllerContract(): IssuerStakingControllerContract | null {
   const wallet = getChainWalletClient();
-  const address = toAddress(process.env.MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS || getMocaIssuerStakingControllerAddress());
+  const address = toAddress(
+    process.env.MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS || getMocaIssuerStakingControllerAddress()
+  );
   if (!wallet || !address) return null;
   return getContract({
     address,
@@ -69,7 +71,9 @@ export function getIssuerStakingControllerContract(): IssuerStakingControllerCon
  */
 export function getIssuerStakingControllerReadContract(): IssuerStakingControllerContract | null {
   const publicClient = getChainPublicClient();
-  const address = toAddress(process.env.MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS || getMocaIssuerStakingControllerAddress());
+  const address = toAddress(
+    process.env.MOCA_ISSUER_STAKING_CONTROLLER_ADDRESS || getMocaIssuerStakingControllerAddress()
+  );
   if (!publicClient || !address) return null;
   return getContract({
     address,

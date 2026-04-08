@@ -20,12 +20,14 @@ async function createSampleIssuer() {
     console.log('📝 Step 1: Authentication');
     console.log('For testing, you need an Ethereum wallet private key (64 hex chars).');
     console.log('Set TEST_PRIVATE_KEY environment variable or generate one with:');
-    console.log('node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"\n');
-    
+    console.log("node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"\n");
+
     const privateKey = process.env.TEST_PRIVATE_KEY;
     if (!privateKey) {
       console.error('❌ Error: TEST_PRIVATE_KEY environment variable not set');
-      console.log('\nSet it with: export TEST_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----"');
+      console.log(
+        '\nSet it with: export TEST_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----"'
+      );
       process.exit(1);
     }
 
@@ -99,33 +101,29 @@ async function createSampleIssuer() {
 
     // Wait a moment for backend to process
     console.log('⏳ Waiting for backend processing...');
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Step 5: Create Verification Programs
     console.log('📝 Step 5: Creating Verification Programs');
-    const programsResult = await createVerificationPrograms(CreateProgramsArgsSchema.parse({
-      deploy: true,
-      programs: [
-        {
-          programName: 'nft_holder_standard',
-          conditions: [
-            { attribute: 'numberOfNfts', operator: '>=', value: 1 },
-          ],
-        },
-        {
-          programName: 'nft_holder_premium',
-          conditions: [
-            { attribute: 'numberOfNfts', operator: '>=', value: 10 },
-          ],
-        },
-        {
-          programName: 'nft_holder_whale',
-          conditions: [
-            { attribute: 'numberOfNfts', operator: '>=', value: 100 },
-          ],
-        },
-      ],
-    }));
+    const programsResult = await createVerificationPrograms(
+      CreateProgramsArgsSchema.parse({
+        deploy: true,
+        programs: [
+          {
+            programName: 'nft_holder_standard',
+            conditions: [{ attribute: 'numberOfNfts', operator: '>=', value: 1 }],
+          },
+          {
+            programName: 'nft_holder_premium',
+            conditions: [{ attribute: 'numberOfNfts', operator: '>=', value: 10 }],
+          },
+          {
+            programName: 'nft_holder_whale',
+            conditions: [{ attribute: 'numberOfNfts', operator: '>=', value: 100 }],
+          },
+        ],
+      })
+    );
     console.log('✅ Verification programs created successfully!');
     programsResult.createdPrograms.forEach((prog, idx) => {
       console.log(`   ${idx + 1}. ${prog.programName}: ${prog.programId}`);
@@ -149,7 +147,6 @@ async function createSampleIssuer() {
     console.log('2. Implement user data fetching API');
     console.log('3. Test credential issuance flow');
     console.log('4. Deploy to production\n');
-
   } catch (error: unknown) {
     const err = error as Error;
     console.error('\n❌ Error:', err.message);

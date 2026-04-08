@@ -18,12 +18,16 @@ export const ConfigureIssuerJwksArgsSchema = z.object({
       u.pathname = u.pathname.replace(/\/+$/, '') || '/';
       return u.origin + u.pathname;
     })
-    .describe('Base URL from tunnel: run npx instatunnel 3000, copy the HTTPS URL from the console. Do not use localhost for JWKS. No trailing slash.'),
+    .describe(
+      'Base URL from tunnel: run npx instatunnel 3000, copy the HTTPS URL from the console. Do not use localhost for JWKS. No trailing slash.'
+    ),
   probeBeforeUpdate: z
     .boolean()
     .optional()
     .default(true)
-    .describe('If true, GET the JWKS URL before updating; if not reachable, return error so user can start server and retry.'),
+    .describe(
+      'If true, GET the JWKS URL before updating; if not reachable, return error so user can start server and retry.'
+    ),
   replaceDomains: z
     .boolean()
     .optional()
@@ -120,9 +124,14 @@ export async function configureIssuerJwks(args: ConfigureIssuerJwksArgs): Promis
     allowedDomains = merged;
   }
 
-  await apiRequest<PartnerData>('PATCH', '/partner', { jwksUrl, allowedDomains }, {
-    'x-issuer-id': issuerId,
-  });
+  await apiRequest<PartnerData>(
+    'PATCH',
+    '/partner',
+    { jwksUrl, allowedDomains },
+    {
+      'x-issuer-id': issuerId,
+    }
+  );
 
   return {
     success: true,

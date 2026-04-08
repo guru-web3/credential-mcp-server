@@ -25,10 +25,7 @@ function prune(): void {
   }
 }
 
-export function saveAuthCode(
-  code: string,
-  data: Omit<StoredAuthCode, 'createdAt'>
-): void {
+export function saveAuthCode(code: string, data: Omit<StoredAuthCode, 'createdAt'>): void {
   prune();
   store.set(code, { ...data, createdAt: Date.now() });
 }

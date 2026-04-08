@@ -14,11 +14,11 @@ describe('SetupPricingArgsSchema', () => {
     assert.strictEqual(result.complianceAccessKeyEnabled, false);
   });
 
-  it('accepts valid pricingModel pay_on_success and pay_on_issuance', () => {
+  it('accepts pay_on_success and normalizes pay_on_issuance to pay_on_success', () => {
     const r1 = SetupPricingArgsSchema.parse({ pricingModel: 'pay_on_success' });
     assert.strictEqual(r1.pricingModel, 'pay_on_success');
     const r2 = SetupPricingArgsSchema.parse({ pricingModel: 'pay_on_issuance' });
-    assert.strictEqual(r2.pricingModel, 'pay_on_issuance');
+    assert.strictEqual(r2.pricingModel, 'pay_on_success');
   });
 
   it('accepts schemaId and priceUsd', () => {
@@ -35,11 +35,9 @@ describe('SetupPricingArgsSchema', () => {
     assert.strictEqual(result.priceUsd, 0);
   });
 
-  it('rejects invalid pricingModel enum', () => {
-    assert.throws(
-      () => SetupPricingArgsSchema.parse({ pricingModel: 'pay_per_use' }),
-      (err) => err.message.includes('pay_on') || err.message.includes('enum')
-    );
+  it('normalizes invalid pricingModel to default (pay_on_success)', () => {
+    const result = SetupPricingArgsSchema.parse({ pricingModel: 'pay_per_use' });
+    assert.strictEqual(result.pricingModel, 'pay_on_success');
   });
 
   it('rejects negative priceUsd', () => {

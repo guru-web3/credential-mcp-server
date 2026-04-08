@@ -10,11 +10,19 @@ const LOGIN_REQUEST_TIMEOUT_MS = 30_000;
 
 const InnerAuthenticateArgsSchema = z
   .object({
-    privateKey: z.string().optional().describe('Ethereum wallet private key (64 hex). Omit when using message-signing. Can be set via CREDENTIAL_MCP_PRIVATE_KEY env.'),
+    privateKey: z
+      .string()
+      .optional()
+      .describe(
+        'Ethereum wallet private key (64 hex). Omit when using message-signing. Can be set via CREDENTIAL_MCP_PRIVATE_KEY env.'
+      ),
     environment: z.enum(['development', 'staging', 'production']).default('staging').describe('API environment'),
     walletAddress: z.string().optional().describe('For message-signing: wallet address that signed (from signer page)'),
     signature: z.string().optional().describe('For message-signing: signature from signer page'),
-    timestamp: z.union([z.number(), z.string().transform((s) => Number(s))]).optional().describe('For message-signing: timestamp (ms) from signer page'),
+    timestamp: z
+      .union([z.number(), z.string().transform((s) => Number(s))])
+      .optional()
+      .describe('For message-signing: timestamp (ms) from signer page'),
   })
   .refine(
     (data) => {
@@ -22,7 +30,10 @@ const InnerAuthenticateArgsSchema = z
       const hasSignature = !!(data.walletAddress && data.signature && data.timestamp != null);
       return hasKey !== hasSignature;
     },
-    { message: 'Provide either privateKey (or set CREDENTIAL_MCP_PRIVATE_KEY) or all of walletAddress, signature, and timestamp for message-signing.' }
+    {
+      message:
+        'Provide either privateKey (or set CREDENTIAL_MCP_PRIVATE_KEY) or all of walletAddress, signature, and timestamp for message-signing.',
+    }
   );
 
 export const AuthenticateArgsSchema = z.preprocess((val) => {
@@ -83,12 +94,17 @@ export async function authenticate(args: z.infer<typeof AuthenticateArgsSchema>)
       timestamp = Number(argTimestamp);
       const age = Date.now() - timestamp;
       if (age > MAX_CHALLENGE_AGE_MS || age < -60000) {
-        throw new Error(`Challenge expired or invalid timestamp. Sign within ${MAX_CHALLENGE_AGE_MS / 60000} minutes and use the same timestamp.`);
+        throw new Error(
+          `Challenge expired or invalid timestamp. Sign within ${MAX_CHALLENGE_AGE_MS / 60000} minutes and use the same timestamp.`
+        );
       }
       console.log(`[DEBUG] Message-signing auth for ${walletAddress}`);
     } else {
       const pk = (privateKey || process.env.CREDENTIAL_MCP_PRIVATE_KEY || '').trim();
-      if (!pk) throw new Error('Missing privateKey or CREDENTIAL_MCP_PRIVATE_KEY. For message-signing provide walletAddress, signature, and timestamp.');
+      if (!pk)
+        throw new Error(
+          'Missing privateKey or CREDENTIAL_MCP_PRIVATE_KEY. For message-signing provide walletAddress, signature, and timestamp.'
+        );
       const key = pk.startsWith('0x') ? pk : `0x${pk}`;
       const wallet = new Wallet(key);
       walletAddress = wallet.address.toLowerCase();
@@ -106,7 +122,9 @@ Timestamp: ${isoTimestamp}`;
     const ax = err as { response?: unknown };
     if (ax?.response !== undefined) throw err;
     const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(`Setup failed before login: ${msg}. Check private key (64 hex characters) or message-signing fields.`);
+    throw new Error(
+      `Setup failed before login: ${msg}. Check private key (64 hex characters) or message-signing fields.`
+    );
   }
 
   const loginBody = { walletAddress, signature, timestamp };
@@ -114,11 +132,10 @@ Timestamp: ${isoTimestamp}`;
   console.log(`[DEBUG] Calling ${apiUrl}/partner/login`);
 
   try {
-    const loginResponse = await axios.post(
-      `${apiUrl}/partner/login`,
-      loginBody,
-      { headers, timeout: LOGIN_REQUEST_TIMEOUT_MS }
-    );
+    const loginResponse = await axios.post(`${apiUrl}/partner/login`, loginBody, {
+      headers,
+      timeout: LOGIN_REQUEST_TIMEOUT_MS,
+    });
 
     console.log('[DEBUG] Login response:', loginResponse.status);
     console.log('[DEBUG] Login data:', JSON.stringify(loginResponse.data, null, 2));
@@ -132,11 +149,13 @@ Timestamp: ${isoTimestamp}`;
     }
 
     const { dashboardToken, issuerId, issuerDid, partnerId, verifierId, verifierDid } = resp.data;
-    
+
     // Log available fields in response
     console.log('[DEBUG] Available fields in login response:', Object.keys(resp.data).join(', '));
     if (!issuerDid) {
-      console.warn('[DEBUG] ⚠️ issuerDid not found in API response. Will attempt to fetch from issuer profile endpoint.');
+      console.warn(
+        '[DEBUG] ⚠️ issuerDid not found in API response. Will attempt to fetch from issuer profile endpoint.'
+      );
     }
 
     session.set('dashboardToken', dashboardToken);
@@ -181,7 +200,12 @@ Timestamp: ${isoTimestamp}`;
     const noResponseMsg =
       [err?.code, err?.message].filter(Boolean).join(' ') ||
       'No response from server (check network, URL, or firewall)';
-    const msg = apiMsg || err?.message || (data && typeof data === 'object' ? `Response: ${JSON.stringify(data)}` : null) || (err?.response ? `HTTP ${err.response.status}` : null) || noResponseMsg;
+    const msg =
+      apiMsg ||
+      err?.message ||
+      (data && typeof data === 'object' ? `Response: ${JSON.stringify(data)}` : null) ||
+      (err?.response ? `HTTP ${err.response.status}` : null) ||
+      noResponseMsg;
 
     throw new Error(`Authentication failed: ${msg}`);
   }

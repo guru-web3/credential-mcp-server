@@ -27,7 +27,9 @@ export const CreateSchemaArgsSchema = z
     schemaType: z
       .string()
       .min(MIN_STRING_LENGTH, 'Schema type is required')
-      .describe('Schema type identifier (e.g., tradingVolumeCredential). Must be unique. Alphanumeric only, not numbers only.'),
+      .describe(
+        'Schema type identifier (e.g., tradingVolumeCredential). Must be unique. Alphanumeric only, not numbers only.'
+      ),
     dataPoints: z
       .array(
         z.object({
@@ -41,18 +43,18 @@ export const CreateSchemaArgsSchema = z
     description: z.string().optional().describe('Schema description'),
     version: z.string().default('1.0').describe('Schema version (e.g. 1.0, 1.0.1)'),
   })
-  .refine(
-    (data) => alphanumericRegEx.test(data.schemaType),
-    { message: 'Schema type must contain only alphanumeric characters with no spaces.', path: ['schemaType'] }
-  )
-  .refine(
-    (data) => !numberOnlyReg.test(data.schemaType),
-    { message: 'Schema type cannot consist of numbers only.', path: ['schemaType'] }
-  )
-  .refine(
-    (data) => versionRegEx.test(data.version ?? '1.0'),
-    { message: 'Version must follow standard format (e.g. 1.0, 1.0.1).', path: ['version'] }
-  );
+  .refine((data) => alphanumericRegEx.test(data.schemaType), {
+    message: 'Schema type must contain only alphanumeric characters with no spaces.',
+    path: ['schemaType'],
+  })
+  .refine((data) => !numberOnlyReg.test(data.schemaType), {
+    message: 'Schema type cannot consist of numbers only.',
+    path: ['schemaType'],
+  })
+  .refine((data) => versionRegEx.test(data.version ?? '1.0'), {
+    message: 'Version must follow standard format (e.g. 1.0, 1.0.1).',
+    path: ['version'],
+  });
 
 export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>) {
   await session.requireAuth();
@@ -83,10 +85,10 @@ export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>)
         format: 'uri',
         description: 'Define the DID of the subject that owns the credential',
         type: 'string',
-        title: 'Credential subject ID'
-      }
+        title: 'Credential subject ID',
+      },
     },
-    required: ['id']
+    required: ['id'],
   };
 
   // attribute.data is required by the API (see credential-dashboard/scripts/create-schema.js)
@@ -126,7 +128,7 @@ export async function createSchema(args: z.infer<typeof CreateSchemaArgsSchema>)
     }>('POST', '/management/scheme/publishOnOss', schemaData, { 'x-issuer-id': issuerId });
 
     const schemaId = response.data.schemeId;
-    
+
     // Store in session for subsequent operations
     session.set('schemaId', schemaId);
     session.set('schemaName', schemaName);
