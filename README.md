@@ -1,8 +1,36 @@
 # Animoca Credential MCP Server
 
-An MCP (Model Context Protocol) server that brings AI-powered Web3 credential management to Cursor, Claude, and other MCP-compatible clients. It exposes 21 tools -- from schema creation and pricing configuration to on-chain staking and x402-gated payments -- as natural-language actions that an AI agent can execute against the AIR/MOCA ecosystem. No dashboards, no context-switching; just describe what you need and the agent handles the rest.
+An MCP server that brings AI-powered Web3 credential management to Cursor, Claude, and other MCP-compatible clients -- from schema creation to on-chain staking in natural language.
 
 Built by [Guru Ramu](https://github.com/gururamu).
+
+---
+
+## The Problem
+
+Building and managing credential systems on the AIR/MOCA ecosystem requires navigating multiple dashboards, REST APIs, chain RPCs, and payment contracts. Each step in the credential lifecycle -- schema creation, pricing configuration, issuance program setup, verification program deployment, on-chain staking, USD8 payment management -- lives in a different interface. AI agents, which are increasingly the primary interface for developers, cannot operate any of these systems. This blocks the vision described in the AIR x ERC-8004 Delegated Verification Framework: agents that can autonomously verify user credentials with proof reuse. At the identity vertex of the Golden Triangle (Digital Identity + Stablecoin + AI), credential infrastructure must be agent-operable for delegated verification to work at scale.
+
+---
+
+## The Solution
+
+An MCP server that exposes the entire credential lifecycle as 20 natural-language tools. An AI agent in Cursor or Claude Desktop can create schemas, configure pricing, deploy issuance and verification programs, manage on-chain staking and USD8 payments, scaffold template apps, and call x402-gated APIs -- all through conversation. The server handles P-256 authentication, chain interactions via viem, and x402 payment protocol integration. It enables the M2 milestone (delegated identity + verification gateway) by making credential infrastructure agent-operable -- the foundation for the AgentDelegationRegistry and proof cache layer described in the ERC-8004 framework.
+
+---
+
+## Demo
+
+### Credential Lifecycle
+
+<video src="assets/demo-credential-lifecycle.mp4" width="100%" autoplay loop muted playsinline></video>
+
+### Cursor Integration
+
+<video src="assets/demo-cursor-integration.mp4" width="100%" autoplay loop muted playsinline></video>
+
+### App Scaffolding
+
+<video src="assets/demo-app-scaffolding.mp4" width="100%" autoplay loop muted playsinline></video>
 
 ---
 
@@ -21,6 +49,70 @@ Built by [Guru Ramu](https://github.com/gururamu).
 ---
 
 ## Architecture
+
+```mermaid
+flowchart TD
+    subgraph Clients["MCP Clients"]
+        CURSOR["Cursor / Claude Desktop<br/>(STDIO)"]
+        REMOTE["Remote / Web Clients<br/>(HTTP)"]
+    end
+
+    subgraph Transport["Transport Layer"]
+        STDIO["StdioServerTransport<br/>src/index.ts"]
+        HTTP["Express + StreamableHTTP<br/>src/httpServer.ts<br/>POST /mcp"]
+    end
+
+    subgraph Auth["Authentication"]
+        KEY["P-256 Key Auth<br/>keyAuth.ts<br/>wallet signs login message"]
+        OAUTH["OAuth Provider<br/>credentialOAuthProvider.ts<br/>PKCE + jose JWTs"]
+        BEARER["bearerOrKeyAuth<br/>middleware"]
+        SIGNER["Signer App (Next.js)<br/>Browser-based wallet signing<br/>Netlify deploy"]
+        SESS["Session Store<br/>apiUrl, dashboardToken,<br/>issuer/verifier IDs, DIDs"]
+    end
+
+    subgraph Core["MCP Core"]
+        FACTORY["createMcpServer<br/>tools/list, tools/call,<br/>resources, prompts"]
+        REGISTRY["Tool Registry<br/>20 tools: name + Zod schema + handler"]
+        NORMALIZE["normalizeToolArgs<br/>LLM quirk handling"]
+    end
+
+    subgraph Tools["Tool Categories (src/tools/)"]
+        SCHEMA["Schema & Program Tools<br/>create_schema, setup_pricing,<br/>create_program, create_verification_programs,<br/>list_schemas, list_templates, list_programs"]
+        APP["App Scaffolding Tools<br/>template_info, issuance_app_config,<br/>verifier_app_config, app_steps,<br/>configure_issuer_jwks"]
+        CHAIN_T["On-Chain Tools<br/>set_price, payment_deposit/withdraw,<br/>claim_fees, stake/unstake/claim_moca"]
+        X402T["x402 Tool<br/>x402_pay_and_verify"]
+        DOCS["Documentation<br/>credential_docs"]
+    end
+
+    subgraph ExternalSvc["External Services"]
+        CREDAPI["AIR Credential REST API<br/>sandbox / staging / production"]
+        MOCA_RPC["MOCA Chain RPC<br/>viem walletClient + publicClient"]
+        CONTRACTS["Smart Contracts<br/>PaymentsController<br/>IssuerStakingController"]
+        X402API["x402-Gated APIs<br/>EIP-3009 auto-payment"]
+    end
+
+    CURSOR --> STDIO
+    REMOTE --> HTTP
+    STDIO --> FACTORY
+    HTTP --> BEARER
+    BEARER --> KEY
+    BEARER --> OAUTH
+    OAUTH --> SIGNER
+    KEY --> SESS
+    OAUTH --> SESS
+    FACTORY --> REGISTRY
+    REGISTRY --> NORMALIZE
+    NORMALIZE --> Tools
+    SCHEMA --> SESS
+    SCHEMA --> CREDAPI
+    APP --> CREDAPI
+    CHAIN_T --> MOCA_RPC
+    MOCA_RPC --> CONTRACTS
+    X402T --> X402API
+    DOCS --> CREDAPI
+```
+
+### Simplified Flow
 
 ```mermaid
 flowchart LR
@@ -249,7 +341,7 @@ pnpm inspector
 
 ---
 
-## Built With
+## Tech Stack
 
 | Technology | Role |
 |---|---|
